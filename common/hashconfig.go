@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"net/rpc"
@@ -6,4 +6,8 @@ import (
 )
 
 type HashConfig struct {
+	ParentId   int
+	NameHash   int
+	Difficulty int
+	Timestamp  int
 }
