@@ -1,6 +1,8 @@
 #include <iostream>
 #include <helper_cuda.h>
 #include <helper_string.h>
+#include <cuda.h>
+#include <cuda_runtime_api.h>
 
 #include "./structs.h"
 #include "./step_a.h"
@@ -9,9 +11,9 @@
 
 using namespace std;
 
-static bool initialized = false;
-static bool in_step_A = true;
-static bool switched = false;
+// static bool initialized = false;
+// static bool in_step_A = true;
+// static bool switched = false;
 
 void initializeCuda() {
   cout << "=== Initializing CUDA..." << endl;
@@ -71,18 +73,38 @@ void initializeCuda() {
 //   }
 // }
 
+two_way_collision run_step_a(uint8_t parentid[32], uint8_t root[32], uint64_t difficulty, uint64_t timestamp, uint8_t version) {
+  sha_base          host_input;
+  two_way_collision host_collision = { .found = false, .nonces = {0L, 0L}};
+  uint64_t base_nonce = (uint64_t) rand();
+  prepare_base(&host_input, parentid, root, difficulty, timestamp, version);
+
+  sha_base* input;
+  cudaMalloc(&input, sizeof(sha_base));
+  cudaMemcpy(input, &host_input, sizeof(sha_base), cudaMemcpyHostToDevice);
+
+  two_way_collision* collision;
+  cudaMalloc(&collision, sizeof(two_way_collision));
+  cudaMemcpy(collision, &host_collision, sizeof(two_way_collision), cudaMemcpyHostToDevice);
+
+  dim3 grid(100, 1);
+  dim3 block(100, 1);
+
+  step_a_kernel<<<grid, block>>>(input, collision, base_nonce);
+
+  cudaMemcpy(&host_collision, collision, sizeof(two_way_collision), cudaMemcpyDeviceToHost);
+  cudaFree(input);
+  cudaFree(collision);
+  return host_collision;
+}
+
 int main(int argc, char **argv) {
+  srand(time(NULL));
   initializeCuda();
-  bool kernel_finished = true;
-  while (true) {
-    // if (messagesAvailable()) {
-    //   m = getMessage();
-    //   respondToMessage(m);
-    // } else if (kernel_finished {
-    //   respondToKernelFinish();
-    // } else {
-    //   yield
-    // }
-  //}
-  }
+  uint8_t parentid[32] = {47, 254, 149, 3, 14, 129, 220, 200, 18, 210, 158, 85, 188, 8, 177, 74, 156, 33, 244, 140, 177, 197, 230, 199, 62, 65, 169, 208, 25, 70, 106, 26};
+  uint8_t root[32] = {21, 98, 32, 101, 67, 218, 118, 65, 35, 194, 27, 213, 36, 103, 79, 10, 138, 175, 73, 200, 168, 151, 68, 201, 115, 82, 254, 103, 127, 126, 64, 6};
+  uint64_t difficulty = 42;
+  uint64_t timestamp = 1456441489431952896L;
+  uint8_t version = 0;
+  run_step_a(parentid, root, difficulty, timestamp, version);
 };
