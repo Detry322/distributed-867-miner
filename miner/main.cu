@@ -144,6 +144,16 @@ void handle_update_base(const char* input) {
 
   global_base = create_base(parentid, root, difficulty, timestamp, version);
   cout << "= Updating base..." << endl;
+  cout << "= Parentid: ";
+  for (int i = 0; i < 32; i ++) {
+    printf("%hhu", parentid[i]);
+  }
+  cout << endl << "= Root: ";
+  for (int i = 0; i < 32; i ++) {
+    printf("%hhu", root[i]);
+  }
+  cout << endl;
+  cout << "= Difficulty: " << difficulty << " Timestamp: " << timestamp << " Version: " << version << endl;
 };
 
 void handle_start_a(const char* input) {
@@ -170,11 +180,15 @@ void handle_start_b(const char* input) {
   }
   state = STATE_WORKING_B;
   cout << "= Starting B..." << endl;
+  cout << "= Example triple:" << endl;
+  for (int i = 0; i < 3; i++) {
+    cout << "= Chain start: " << part_b_triples[1].chains[i].start << " Length: " << part_b_triples[1].chains[i].length << endl;
+  }
 };
 
 int main(int argc, char **argv) {
   srand(time(NULL));
-  //initializeCuda();
+  initializeCuda();
   #pragma GCC diagnostic ignored "-Wgnu-designator"
   struct pollfd stdin_poll = { .fd = STDIN_FILENO, .events = POLLIN | POLLRDBAND | POLLRDNORM | POLLPRI };
   while (true) {
