@@ -120,9 +120,9 @@ Ends in newline.
 func (slave *Slave) MakeHMessage() string {
 	message := "H " + slave.Config.Block.ParentId +
 		" " + slave.Config.Block.Root + " "
-	common.AddHexDigits(message, slave.Config.Block.Difficulty, true)
+	message = common.AddHexDigits(message, slave.Config.Block.Difficulty, true)
 	message += " "
-	common.AddHexDigits(message, slave.Config.Block.Timestamp, true)
+	message = common.AddHexDigits(message, slave.Config.Block.Timestamp, true)
 	message += " "
 	// now just two hex bytes for version
 	array := make([]byte, 2)
@@ -143,17 +143,17 @@ func (slave *Slave) MakeBMessage() string {
 	message := "B"
 	for _, triple := range triples {
 		message += " "
-		common.AddHexDigits(message, triple.Chain1.Start, true)
+		message = common.AddHexDigits(message, triple.Chain1.Start, true)
 		message += " "
-		common.AddHexDigits(message, triple.Chain1.Length, false)
+		message = common.AddHexDigits(message, triple.Chain1.Length, false)
 		message += " "
-		common.AddHexDigits(message, triple.Chain2.Start, true)
+		message = common.AddHexDigits(message, triple.Chain2.Start, true)
 		message += " "
-		common.AddHexDigits(message, triple.Chain2.Length, false)
+		message = common.AddHexDigits(message, triple.Chain2.Length, false)
 		message += " "
-		common.AddHexDigits(message, triple.Chain3.Start, true)
+		message = common.AddHexDigits(message, triple.Chain3.Start, true)
 		message += " "
-		common.AddHexDigits(message, triple.Chain3.Length, false)
+		message = common.AddHexDigits(message, triple.Chain3.Length, false)
 	}
 	return message + "\n"
 }
