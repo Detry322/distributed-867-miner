@@ -51,7 +51,7 @@ void initializeCuda() {
 
 void run_step_a(sha_base* host_input) {
   if (host_input == NULL) {
-    cout << "= Error: Nothing to copy, step B. Will definitely segfault." << endl;
+    cout << "===== Error: Nothing to copy, step B. Will definitely segfault." << endl;
   }
   if (part_b_triples != NULL) {
     free(part_b_triples);
@@ -76,7 +76,7 @@ void run_step_a(sha_base* host_input) {
 
 void run_step_b(sha_base* host_input, triple* host_triples) {
   if (host_input == NULL || host_triples == NULL) {
-    cout << "= Error: Nothing to copy, step B. Will definitely segfault." << endl;
+    cout << "===== Error: Nothing to copy, step B. Will definitely segfault." << endl;
   }
   sha_base* input;
   cudaMalloc(&input, sizeof(sha_base));
@@ -91,7 +91,6 @@ void run_step_b(sha_base* host_input, triple* host_triples) {
 
   cudaFree(input);
   cudaFree(triples);
-  cout << "B_FIN" << endl;
 }
 
 sha_base* create_base(uint8_t parentid[32], uint8_t root[32], uint64_t difficulty, uint64_t timestamp, uint8_t version) {
@@ -144,7 +143,7 @@ void handle_update_base(const char* input) {
   }
 
   global_base = create_base(parentid, root, difficulty, timestamp, version);
-  cout << "= Updating base..." << endl;
+  cout << "=== Updating base..." << endl;
   cout << "= Parentid: ";
   for (int i = 0; i < 32; i ++) {
     printf("%hhx", parentid[i]);
@@ -162,7 +161,7 @@ void handle_start_a(const char* input) {
     cout << "= Error: Starting A but haven't received base. Will prolly segfault" << endl;
   }
   state = STATE_WORKING_A;
-  cout << "= Starting A..." << endl;
+  cout << "=== Starting A..." << endl;
 };
 
 void handle_start_b(const char* input) {
@@ -180,7 +179,7 @@ void handle_start_b(const char* input) {
     }
   }
   state = STATE_WORKING_B;
-  cout << "= Starting B..." << endl;
+  cout << "=== Starting B..." << endl;
   cout << "= Example triple:" << endl;
   for (int i = 0; i < 3; i++) {
     cout << "= Chain start: " << part_b_triples[1].chains[i].start << " Length: " << part_b_triples[1].chains[i].length << endl;
@@ -207,10 +206,10 @@ int main(int argc, char **argv) {
       } else if (cstr[0] == 'B') {
         handle_start_b(cstr);
       } else if (cstr[0] == 'Q') {
-        cout << "= Exiting..." << endl;
+        cout << "=== Exiting..." << endl;
         exit(0);
       } else {
-        cout << "= Error: Received a line of garbage input" << endl;
+        cout << "===== Error: Received a line of garbage input" << endl;
       }
     } else {
       if (state == STATE_DOING_NOTHING) {
