@@ -7,11 +7,17 @@ type HashConfig struct {
 	Targets []Collision
 }
 
-type Collision struct {
-	X uint64
-	Y uint64
-	Hash uint64
+type HashChain struct {
+	Start uint64
+	End uint64
+	Length uint64
 	Timestamp uint64
+}
+
+type HashChainTriple struct {
+	Chain1 HashChain // Longest chain
+	Chain2 HashChain // Middle chain
+	Chain3 HashChain // Shortest chain
 }
 
 type Block struct {
