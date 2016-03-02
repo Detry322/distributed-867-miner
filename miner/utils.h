@@ -3,4 +3,4 @@
 
 #define GET_RAND() ((uint64_t)(rand() | ((uint64_t) rand() << 32)))
 
-#endif _utils_
+#endif // _utils_
