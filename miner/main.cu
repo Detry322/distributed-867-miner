@@ -154,7 +154,7 @@ void handle_update_base(const char* input) {
     printf("%hhx", root[i]);
   }
   cout << endl;
-  cout << "= Difficulty: " << difficulty << " Timestamp: " << timestamp << " Version: " << version << endl;
+  cout << "= Difficulty: " << difficulty << " Timestamp: " << timestamp << " Version: " << (uint32_t) version << endl;
 };
 
 void handle_start_a(const char* input) {
@@ -203,6 +203,9 @@ int main(int argc, char **argv) {
         handle_start_a(cstr);
       } else if (cstr[0] == 'B') {
         handle_start_b(cstr);
+      } else if (cstr[0] == 'Q') {
+        cout << "= Exiting..." << endl;
+        exit(0);
       } else {
         cout << "= Error: Received a line of garbage input" << endl;
       }
