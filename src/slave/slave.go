@@ -22,7 +22,7 @@ const (
 	A         = 1
 	B         = 2
 	address   = "18.187.0.48:1337"
-	path      = "~/miner" // TODO: modify this to right path.
+	path      = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
 	maxChains = 1000
 )
 
