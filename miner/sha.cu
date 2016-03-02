@@ -40,6 +40,7 @@ void prepare_base(sha_base* base, uint8_t parentid[32], uint8_t root[32], uint64
 
   insert_long_big_endian(difficulty, base->work, 0);
   base->difficulty = difficulty;
+  base->timestamp = timestamp;
   insert_long_big_endian(timestamp, base->work, 2);
   // in->work[4] and [5] are for the nonce
   base->work[6] = (version << 24) | 0x800000;

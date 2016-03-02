@@ -2,6 +2,7 @@
 #include "./sha_calculate.h"
 #include <stdint.h>
 #include <assert.h>
+#include <stdio.h>
 
 __shared__ sha_base base;
 
@@ -24,14 +25,13 @@ __device__ uint64_t calculate_sha(uint64_t nonce) {
   return ((((uint64_t) (base.h[6] + G)) << 32) | ((uint64_t) (base.h[7] + H))) & ((1L << base.difficulty) - 1);
 }
 
-__device__ void find_solution(two_way_collision* solution, uint64_t nonce_a, uint64_t nonce_b) {
+__device__ void find_solution(uint64_t timestamp, uint64_t nonce_a, uint64_t nonce_b) {
   uint64_t temp_a, temp_b;
   while (true) {
     temp_a = calculate_sha(nonce_a);
     temp_b = calculate_sha(nonce_b);
     if (temp_a == temp_b) {
-      solution->nonces[0] = nonce_a;
-      solution->nonces[1] = nonce_b;
+      printf("A %lu %lu %lu\n", timestamp, nonce_a, nonce_b);
       return;
     } else {
       nonce_a = temp_a;
@@ -40,7 +40,7 @@ __device__ void find_solution(two_way_collision* solution, uint64_t nonce_a, uin
   }
 }
 
-__global__ void step_a_kernel(sha_base* input, two_way_collision* solution, uint64_t base_nonce) {
+__global__ void step_a_kernel(sha_base* input, uint64_t base_nonce) {
   if (threadIdx.x == 0) {
     base = *input;
   }
@@ -48,19 +48,12 @@ __global__ void step_a_kernel(sha_base* input, two_way_collision* solution, uint
   uint64_t initial_nonce = base_nonce + (blockIdx.x*blockDim.x+threadIdx.x);
   uint64_t tortoise, hare;
   tortoise = hare = initial_nonce;
-  uint32_t i = 0;
-  while (true) {
-    i += 1;
-    if ((i & 0xFFF) == 0) {
-      if (solution->found) {
-        return;
-      }
-    }
+  int64_t max_int = (1L << (base.difficulty >> 1))/2;
+  for (int64_t i = 0; i < max_int; i++) {
     tortoise = calculate_sha(tortoise);
     hare = calculate_sha(calculate_sha(hare));
     if (tortoise == hare) {
-      solution->found = true;
-      find_solution(solution, initial_nonce, tortoise);
+      find_solution(base.timestamp, initial_nonce, tortoise);
       return;
     }
   }

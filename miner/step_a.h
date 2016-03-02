@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include "./structs.h"
 
-extern __device__ two_way_collision solution;
-
-__global__ void step_a_kernel(sha_base* input, two_way_collision *solution, uint64_t base_nonce);
+__global__ void step_a_kernel(sha_base* input, uint64_t base_nonce);
 
 #endif // _step_a_
