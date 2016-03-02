@@ -14,6 +14,7 @@ import "bytes"
 import "fmt"
 
 const NODE_URL = "http://6857coin.csail.mit.edu:8080"
+const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const SEND_THRESHOLD = 1024
@@ -56,6 +57,8 @@ func main() {
 			fmt.Println("Mining on new block")
 			master.LastBlock = b
 			master.LastBlock.Timestamp = uint64(time.Now().UnixNano())
+			shaHash := sha256.Sum256([]byte(BLOCK_TEXT))
+			master.LastBlock.Root = hex.EncodeToString(shaHash[:])
 			master.HashChainMap = make(map[uint64][]common.HashChain)
 			master.HashChainTriples = make([]common.HashChainTriple, 0)
 			master.HashChainTriplesIndex = 0
@@ -230,16 +233,15 @@ func (m *Master) SubmitAnswer(triple common.Collision, reply *bool) (err error) 
 			fmt.Println("Found collision")
 			b := common.Block{}
 			b.ParentId = m.LastBlock.ParentId
-			message := "Rolled my own crypto!!!!!!!"
-			shaHash := sha256.Sum256([]byte(message))
+			shaHash := sha256.Sum256([]byte(BLOCK_TEXT))
 			b.Root = hex.EncodeToString(shaHash[:])
 			b.Difficulty = m.LastBlock.Difficulty
-			b.Timestamp = uint64(time.Now().UnixNano())
+			b.Timestamp = m.LastBlock.Timestamp
 			b.Nonces[0] = triple.Nonce1
 			b.Nonces[1] = triple.Nonce2
 			b.Nonces[2] = triple.Nonce3
 			b.Version = m.LastBlock.Version
-			commitBlock(m, b, message)
+			commitBlock(m, b, BLOCK_TEXT)
 		}
 	}
 	m.mu.Unlock()
