@@ -1,16 +1,19 @@
 package common
 
-import ()
+import (
+	"encoding/binary"
+	"encoding/hex"
+)
 
 type HashConfig struct {
-	Block Block
+	Block   Block
 	Triples []HashChainTriple
 }
 
 type HashChain struct {
-	Start uint64
-	End uint64
-	Length uint64
+	Start     uint64
+	End       uint64
+	Length    uint64
 	Timestamp uint64
 }
 
@@ -21,10 +24,24 @@ type HashChainTriple struct {
 }
 
 type Block struct {
-	ParentId string
-	Root string
+	ParentId   string
+	Root       string
 	Difficulty uint64
-	Timestamp uint64
-	Nonces [3]uint64
-	Version byte
+	Timestamp  uint64
+	Nonces     [3]uint64
+	Version    byte
+}
+
+func AddHexDigits(message string, newInt uint64, want16 bool) {
+	if want16 {
+		// make it 16 bytes
+		array := make([]byte, 16)
+		binary.BigEndian.PutUint64(array, newInt)
+		message = message + hex.EncodeToString(array)
+	} else {
+		// make it 8 bytes
+		array := make([]byte, 8)
+		binary.BigEndian.PutUint32(array, newInt)
+		message = message + hex.EncodeToString(array)
+	}
 }
