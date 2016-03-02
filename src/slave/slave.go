@@ -51,6 +51,7 @@ Parses message from miner.
 */
 func (slave *Slave) ParseMessage(message string) {
 	// message = strings.TrimFunc(message)
+	log.Debug("message from miner: " + message)
 	reply := true
 	if len(message) == 0 {
 		return
@@ -176,8 +177,12 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	fmt.Println("actually starting part a")
 	slave.Mode = A
 	slave.Config = config
-	io.WriteString(slave.Stdin, slave.MakeHMessage())
-	io.WriteString(slave.Stdin, slave.MakeAMessage())
+	hMessage := slave.MakeHMessage()
+	io.WriteString(slave.Stdin, hMessage)
+	aMessage := slave.MakeAMessage()
+	io.WriteString(slave.Stdin, aMessage)
+	log.Debug(hMessage)
+	log.Debug(aMessage)
 	// send stuff to the miner
 	return nil
 }
