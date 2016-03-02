@@ -1,7 +1,6 @@
 TARGET := miner
 
-objects = main.o step_a.o sha.o
-# sha.o step_a.o step_b.o
+objects = main.o step_a.o sha.o step_b.o
 
 HOST_COMPILER := clang++
 INCLUDE_PATH := /Developer/NVIDIA/CUDA-7.5/samples/common/inc

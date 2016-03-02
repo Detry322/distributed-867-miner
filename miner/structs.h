@@ -10,4 +10,13 @@ typedef struct {
   uint64_t timestamp;
 } sha_base;
 
+typedef struct {
+  int32_t length;
+  uint64_t start;
+} hash_chain;
+
+typedef struct {
+  hash_chain chains[3];
+} triple;
+
 #endif // _structs_

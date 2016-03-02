@@ -8,6 +8,7 @@
 #include "./step_a.h"
 #include "./step_b.h"
 #include "./sha.h"
+#include "./utils.h"
 
 using namespace std;
 
@@ -38,49 +39,12 @@ void initializeCuda() {
   cudaSetDevice(device);
 }
 
-// void respondToKernelFinish() {
-//   if (!initialized)
-//     return
-//   if (in_step_A) {
-//     // Get pair that was found
-//     if (!switched)
-//       // Send message in queue
-//     else
-//       switched = false;
-//     runStepA();
-//   } else {
-//     // Check if triplet was found
-//     if (!switched)
-//       if (triplet_found())
-//         // Send message in queue
-//     else
-//       switched = false;
-//     runStepB();
-//   }
-// }
-
-// void respondToMessage() {
-//   if (isHashPerSecondMessage)
-//     // send hash per second message
-//   else if (isRunStepAMessage) {
-//     in_step_A = true;
-//     switched = true;
-//     // set up step A
-//   } else if (isRunStepBMessage) {
-//     in_step_A = false;
-//     switched = true;
-//     // set up step B
-//   }
-// }
-
-void run_step_a(uint8_t parentid[32], uint8_t root[32], uint64_t difficulty, uint64_t timestamp, uint8_t version) {
-  sha_base          host_input;
-  uint64_t base_nonce = (uint64_t) rand();
-  prepare_base(&host_input, parentid, root, difficulty, timestamp, version);
+void run_step_a(sha_base* host_input) {
+  uint64_t base_nonce = GET_RAND();
 
   sha_base* input;
   cudaMalloc(&input, sizeof(sha_base));
-  cudaMemcpy(input, &host_input, sizeof(sha_base), cudaMemcpyHostToDevice);
+  cudaMemcpy(input, host_input, sizeof(sha_base), cudaMemcpyHostToDevice);
 
   step_a_kernel<<<16, 512>>>(input, base_nonce);
   cudaDeviceSynchronize();
@@ -88,6 +52,33 @@ void run_step_a(uint8_t parentid[32], uint8_t root[32], uint64_t difficulty, uin
   cudaFree(input);
 }
 
+
+#define STEP_B_BLOCKS 8
+#define STEP_B_THREADS 128
+#define MEMORY_SIZE (sizeof(triple)*STEP_B_THREADS*STEP_B_BLOCKS)
+
+void run_step_b(sha_base* host_input, triple* host_triples) {
+  sha_base* input;
+  cudaMalloc(&input, sizeof(sha_base));
+  cudaMemcpy(input, host_input, sizeof(sha_base), cudaMemcpyHostToDevice);
+
+  triple* triples;
+  cudaMalloc(&triples, MEMORY_SIZE);
+  cudaMemcpy(triples, host_triples, MEMORY_SIZE, cudaMemcpyHostToDevice);
+
+  step_b_kernel<<<STEP_B_BLOCKS, STEP_B_THREADS>>>(input, triples);
+  cudaDeviceSynchronize();
+
+  cudaFree(input);
+  cudaFree(triples);
+  cout << "B_FIN" << endl;
+}
+
+sha_base* create_base(uint8_t parentid[32], uint8_t root[32], uint64_t difficulty, uint64_t timestamp, uint8_t version) {
+  sha_base* base = (sha_base*) malloc(sizeof(sha_base));
+  prepare_base(base, parentid, root, difficulty, timestamp, version);
+  return base;
+}
 
 int main(int argc, char **argv) {
   srand(time(NULL));
@@ -97,5 +88,7 @@ int main(int argc, char **argv) {
   uint64_t difficulty = 42;
   uint64_t timestamp = 1456441489431952896L;
   uint8_t version = 0;
-  run_step_a(parentid, root, difficulty, timestamp, version);
+  sha_base* base = create_base(parentid, root, difficulty, timestamp, version);
+  run_step_a(base);
+  free(base);
 };
