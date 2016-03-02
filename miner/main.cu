@@ -194,9 +194,9 @@ int main(int argc, char **argv) {
   while (true) {
     string input;
     if (poll(&stdin_poll, 1, 0) == 1 && !cin.eof()) {
+      getline(cin, input);
       cout << "= Length: " << input.length() << endl;
       cout << "= Received: " << input << endl;
-      getline(cin, input);
       const char* cstr = input.c_str();
       if (cstr[0] == 'H') {
         handle_update_base(cstr);
