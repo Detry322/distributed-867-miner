@@ -10,7 +10,7 @@ UNAME = $(shell uname)
 ifeq ($(UNAME),Darwin)
 	NVCC := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER) -I$(INCLUDE_PATH)
 else
-	NVCC := nvcc -I/usr/local/cuda-7.0/samples/common/inc -I/usr/local/cuda/include
+	NVCC := nvcc -std=c++11 -I/usr/local/cuda-7.0/samples/common/inc -I/usr/local/cuda/include
 endif
 
 all: $(objects)

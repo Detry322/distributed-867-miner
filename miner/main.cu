@@ -6,6 +6,7 @@
 #include <poll.h>
 #include <stdlib.h>
 #include <thread>
+#include <unistd.h>
 
 #include "./structs.h"
 #include "./step_a.h"
