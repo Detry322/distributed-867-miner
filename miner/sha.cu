@@ -78,6 +78,14 @@ uint64_t sha256(uint8_t parentid[32], uint8_t root[32], uint64_t difficulty, uin
 
   SHA_CALCULATE(work, A, B, C, D, E, F, G, H);
 
+  printf("%x", base.h[0] + A);
+  printf("%x", base.h[1] + B);
+  printf("%x", base.h[2] + C);
+  printf("%x", base.h[3] + D);
+  printf("%x", base.h[4] + E);
+  printf("%x", base.h[5] + F);
+  printf("%x", base.h[6] + G);
+  printf("%x\n", base.h[7] + H);
   uint64_t final_hash = ((((uint64_t) (base.h[6] + G)) << 32) | ((uint64_t) (base.h[7] + H))) & ((1L << difficulty) - 1);
   return final_hash;
 }
