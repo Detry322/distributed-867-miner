@@ -326,6 +326,7 @@ func main() {
 		configChan:  make(chan common.HashConfig, 100),
 		messageChan: make(chan string, 1000),
 	}
+	rpc.Register(slave)
 	go slave.startMiner()
 	go listenForMaster(slave) // runs forever, accepting RPCs.
 	initiateConnection(slave)
@@ -339,3 +340,5 @@ func listenForMaster(slave *Slave) {
 	}
 	rpc.Accept(l)
 }
+
+func (slave *Slave) 

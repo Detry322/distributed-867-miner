@@ -43,11 +43,8 @@ func main() {
 	log.Debug("Entered main")
 	master := &Master{}
 	master.Slaves = make([]Slave, 0)
-	master.LastBlock = getNextBlock()
-	master.LastBlock.Timestamp = uint64(time.Now().UnixNano())
-	master.HashChainMap = make(map[uint64][]common.HashChain)
-	master.HashChainTriples = make([]common.HashChainTriple, 0)
-	master.HashChainTriplesIndex = 0
+	master.LastBlock = common.Block{}
+	master.LastBlock.ParentId = ""
 	master.NextSlave = 0
 	rpc.Register(master)
 	go listenForSlaves(master)
@@ -62,8 +59,8 @@ func main() {
 			master.HashChainMap = make(map[uint64][]common.HashChain)
 			master.HashChainTriples = make([]common.HashChainTriple, 0)
 			master.HashChainTriplesIndex = 0
+			go master.solveBlock()
 		}
-		go master.solveBlock()
 		master.mu.Unlock()
 		time.Sleep(time.Millisecond * time.Duration(SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS))
 	}
@@ -84,7 +81,7 @@ func (m *Master) solveBlock() {
 	for _, slave := range m.Slaves {
 		args := common.HashConfig{m.LastBlock, make([]common.HashChainTriple, 0)}
 		reply := false
-		slave.conn.Call("Slave.StartPartA", args, &reply)
+		slave.conn.Call("Slave.StartStepA", args, &reply)
 	}
 	m.mu.Unlock()
 }
@@ -139,7 +136,11 @@ func (m *Master) Connect(ip string, reply *bool) (err error) {
 	fmt.Println("New slave connected")
 	m.Slaves = append(m.Slaves, Slave{conn})
 	args := common.HashConfig{m.LastBlock, make([]common.HashChainTriple, 0)}
-	m.Slaves[len(m.Slaves) - 1].conn.Call("Slave.StartPartA", args, &reply)
+	bubuj := false
+	e = conn.Call("Slave.StartStepA", args, &bubuj)
+	if e != nil {
+		log.WithFields(log.Fields{"error": e}).Error("Part A error")
+	}
 	m.mu.Unlock()
 	return nil
 }
@@ -198,7 +199,7 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 					
 					done := false
 					for !done {
-						e := m.Slaves[m.NextSlave].conn.Call("Slave.StartPartB", args, &reply)
+						e := m.Slaves[m.NextSlave].conn.Call("Slave.StartStepB", args, &reply)
 						
 						if e == nil {
 							done = true
