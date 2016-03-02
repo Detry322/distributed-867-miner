@@ -195,6 +195,8 @@ int main(int argc, char **argv) {
     string input;
     if (poll(&stdin_poll, 1, 0) == 1 && !cin.eof()) {
       getline(cin, input);
+      if (input.length() == 0)
+        continue;
       cout << "= Length: " << input.length() << endl;
       cout << "= Received: " << input << endl;
       const char* cstr = input.c_str();
