@@ -39,7 +39,7 @@ type Block struct {
 	Version    byte
 }
 
-func AddHexDigits(message string, newInt uint64, want16 bool) {
+func AddHexDigits(message string, newInt uint64, want16 bool) string {
 	if want16 {
 		// make it 16 bytes
 		array := make([]byte, 8)
@@ -51,4 +51,5 @@ func AddHexDigits(message string, newInt uint64, want16 bool) {
 		binary.BigEndian.PutUint32(array, uint32(newInt))
 		message = message + hex.EncodeToString(array)
 	}
+	return message
 }
