@@ -23,6 +23,13 @@ type HashChainTriple struct {
 	Chain3 HashChain // Shortest chain
 }
 
+type Collision struct {
+	Nonce1 uint64
+	Nonce2 uint64
+	Nonce3 uint64
+	Timestamp uint64
+}
+
 type Block struct {
 	ParentId   string
 	Root       string
