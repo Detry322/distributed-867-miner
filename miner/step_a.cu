@@ -32,7 +32,7 @@ __global__ void step_a_kernel(sha_base* input, uint64_t base_nonce) {
   __syncthreads();
   uint64_t initial_nonce = base_nonce + (blockIdx.x*blockDim.x+threadIdx.x);
   uint64_t distinguished_cutoff = 1L << (abase.difficulty*2/3);
-  int64_t max_steps = 20L << (abase.difficulty/3);
+  int64_t max_steps = 1L << (abase.difficulty/3);
   uint64_t d = initial_nonce;
   for (int64_t i = 1; i < max_steps; i++) {
     d = calculate_sha_a(d);
