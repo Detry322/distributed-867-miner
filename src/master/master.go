@@ -8,12 +8,15 @@ import "time"
 import "common"
 import "net/http"
 import "encoding/json"
+import "encoding/hex"
+import "crypto/sha256"
+import "bytes"
 import "fmt"
-import "math"
 
 const NODE_URL = "http://6857coin.csail.mit.edu:8080"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
+const SEND_THRESHOLD = 1024
 
 func init() {
   // Only log the warning severity or above.
@@ -23,7 +26,10 @@ func init() {
 type Master struct {
 	Slaves []Slave
 	LastBlock common.Block
-	Collisions []Collision
+	HashChainMap map[uint64][]common.HashChain
+	HashChainTriples []common.HashChainTriple
+	HashChainTriplesIndex uint64
+	NextSlave uint64
 	mu sync.Mutex
 }
 
@@ -38,18 +44,24 @@ func main() {
 	master := &Master{}
 	master.Slaves = make([]Slave, 0)
 	master.LastBlock = getNextBlock()
-	master.Collisions = make([]Collisions, 0)
+	master.LastBlock.Timestamp = uint64(time.Now().UnixNano())
+	master.HashChainMap = make(map[uint64][]common.HashChain)
+	master.HashChainTriples = make([]common.HashChainTriple, 0)
+	master.HashChainTriplesIndex = 0
+	master.NextSlave = 0
 	rpc.Register(master)
-
 	go listenForSlaves(master)
 	
 	for {
 		b := getNextBlock()
 		master.mu.Lock()
-		if b.Timestamp > master.LastBlock.Timestamp {
+		if b.ParentId != master.LastBlock.ParentId {
 			fmt.Println("Mining on new block")
 			master.LastBlock = b
-			Collisions = make([]Collision, 0)
+			master.LastBlock.Timestamp = uint64(time.Now().UnixNano())
+			master.HashChainMap = make(map[uint64][]common.HashChain)
+			master.HashChainTriples = make([]common.HashChainTriple, 0)
+			master.HashChainTriplesIndex = 0
 		}
 		go master.solveBlock()
 		master.mu.Unlock()
@@ -67,13 +79,14 @@ func listenForSlaves(master *Master) {
 }
 
 func (m *Master) solveBlock() {
-	master.mu.Lock()
-	for _, slave := range master.Slaves {
-		args := HashConfig{m.LastBlock, make([]Collision)}
+	m.mu.Lock()
+	fmt.Println("Starting Part A")
+	for _, slave := range m.Slaves {
+		args := common.HashConfig{m.LastBlock, make([]common.HashChainTriple, 0)}
 		reply := false
 		slave.conn.Call("Slave.StartPartA", args, &reply)
 	}
-	master.mu.Unlock()
+	m.mu.Unlock()
 }
 
 func getNextBlock() common.Block {
@@ -98,23 +111,21 @@ type BlockRequest struct {
 	Tag string
 }
 
-func commitBlock(master *Master, b common.Block) {
+func commitBlock(master *Master, b common.Block, text string) {
 	master.mu.Lock()
-	req := BlockRequest{b, "Rolled my own crypto"}
-	encoded := string(json.Marshal(req))
-	fmt.Prinln(encoded)
-	req, e := http.NewRequest("POST", NODE_URL + "/add", encoded)
+	br := BlockRequest{b, text}
+	s, e := json.Marshal(br)
 	if e != nil {
-		log.WithFields(log.Fields{"error": e}).Error("Creating Request Failed")
+		log.WithFields(log.Fields{"error": e}).Error("Marshalling Failed")
 	}
-	fmt.Prinln(req)
-
-	client := &http.Client{}
-	resp, e := client.Do(req)
+	encoded := string(s)
+	fmt.Println(encoded)
+	
+	resp, e := http.Post(NODE_URL + "/add", "encoding/json", bytes.NewBuffer([]byte(encoded)))
 	if e != nil {
-		log.WithFields(log.Fields{"error": e}).Error("Sending Request Failed")
+		log.WithFields(log.Fields{"error": e}).Error("Marshalling Failed")
 	}
-	fmt.Println(resp)
+	resp.Body.Close()
 
 	master.mu.Unlock()
 }
@@ -127,26 +138,110 @@ func (m *Master) Connect(ip string, reply *bool) (err error) {
 	m.mu.Lock()
 	fmt.Println("New slave connected")
 	m.Slaves = append(m.Slaves, Slave{conn})
+	args := common.HashConfig{m.LastBlock, make([]common.HashChainTriple, 0)}
+	m.Slaves[len(m.Slaves) - 1].conn.Call("Slave.StartPartA", args, &reply)
 	m.mu.Unlock()
 	return nil
 }
 
-func (m *Master) partADone() bool {
-	l := len(m.Collisions)
-	return l*l*l*l > math.Pow(2, m.LastBlock.Difficulty)
+func (m *Master) checkPartADone() bool {
+	l := uint64(len(m.HashChainTriples)) - m.HashChainTriplesIndex
+	return l >= SEND_THRESHOLD
 }
 
-func (m *Master) AddCollision(collision Collision, reply *bool) (err error) {
+func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err error) {
 	m.mu.Lock()
-	if collision.Timestamp >= m.LastBlock.Timestamp {
-		m.Collisions = append(m.Collisions, collision)
-		if partADone() {
-			for _, slave := range master.Slaves {
-				args := HashConfig{m.LastBlock, make([]Collision)}
-				reply := false
-				slave.conn.Call("Slave.StartPartA", args, &reply)
+	for _, chain := range chains {
+		if chain.Timestamp == m.LastBlock.Timestamp {
+			fmt.Println("Found hashchain")
+			entry, ok := m.HashChainMap[chain.End]
+			lengthEndpoint := 1
+
+			if ok {
+				duplicate := false
+				for _, v := range entry {
+					if v.Start == chain.Start {
+						duplicate = true
+					}
+				}
+
+				if !duplicate {
+					m.HashChainMap[chain.End] = append(entry, chain)
+				}
+
+				lengthEndpoint = len(m.HashChainMap[chain.End])
+			} else {
+				list := make([]common.HashChain, 0)
+				m.HashChainMap[chain.End] = append(list, chain)
+			}
+
+			if lengthEndpoint >= 3 {
+				entry := m.HashChainMap[chain.End]
+				delete(m.HashChainMap, chain.End)
+
+				if entry[0].End < entry[1].End {
+					entry[0], entry[1] = entry[1], entry[0]
+				}
+				if entry[1].End < entry[2].End {
+					entry[1], entry[2] = entry[2], entry[1]
+				}
+				if entry[0].End < entry[1].End {
+					entry[0], entry[1] = entry[1], entry[0]
+				}
+
+				m.HashChainTriples = append(m.HashChainTriples, common.HashChainTriple{entry[0], entry[1], entry[2]})
+				fmt.Println("Appended triple")
+
+				if m.checkPartADone() {
+					args := common.HashConfig{m.LastBlock, m.HashChainTriples[m.HashChainTriplesIndex : m.HashChainTriplesIndex + SEND_THRESHOLD]}
+					reply := false
+					
+					done := false
+					for !done {
+						e := m.Slaves[m.NextSlave].conn.Call("Slave.StartPartB", args, &reply)
+						
+						if e == nil {
+							done = true
+						}
+
+						m.NextSlave++
+						if m.NextSlave >= uint64(len(m.Slaves)) {
+							m.NextSlave = 0
+						}
+					}
+
+
+					m.HashChainTriplesIndex += SEND_THRESHOLD
+				}
 			}
 		}
 	}
 	m.mu.Unlock()
+
+	return nil
+}
+
+
+func (m *Master) SubmitAnswer(triple common.Collision, reply *bool) (err error) {
+	m.mu.Lock()
+	if triple.Timestamp == m.LastBlock.Timestamp {
+		if triple.Nonce1 != triple.Nonce2 && triple.Nonce2 != triple.Nonce3 && triple.Nonce3 != triple.Nonce1 {
+			fmt.Println("Found collision")
+			b := common.Block{}
+			b.ParentId = m.LastBlock.ParentId
+			message := "Rolled my own crypto!!!!!!!"
+			shaHash := sha256.Sum256([]byte(message))
+			b.Root = hex.EncodeToString(shaHash[:])
+			b.Difficulty = m.LastBlock.Difficulty
+			b.Timestamp = uint64(time.Now().UnixNano())
+			b.Nonces[0] = triple.Nonce1
+			b.Nonces[1] = triple.Nonce2
+			b.Nonces[2] = triple.Nonce3
+			b.Version = m.LastBlock.Version
+			commitBlock(m, b, message)
+		}
+	}
+	m.mu.Unlock()
+
+	return nil
 }
