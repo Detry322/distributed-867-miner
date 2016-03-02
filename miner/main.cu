@@ -190,11 +190,11 @@ void handle_start_b(const char* input) {
 int main(int argc, char **argv) {
   srand(time(NULL));
   initializeCuda();
-  #pragma GCC diagnostic ignored "-Wgnu-designator"
   struct pollfd stdin_poll = { .fd = STDIN_FILENO, .events = POLLIN | POLLRDBAND | POLLRDNORM | POLLPRI };
   while (true) {
     string input;
     if (poll(&stdin_poll, 1, 0) == 1 && !cin.eof()) {
+      cout << "= Length: " << input.length() << endl;
       cout << "= Received: " << input << endl;
       getline(cin, input);
       const char* cstr = input.c_str();
