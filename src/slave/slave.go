@@ -21,7 +21,7 @@ import (
 const (
 	A         = 1
 	B         = 2
-	address   = "18.187.0.48:1337"
+	address   = "172.31.14.55:1337" //"18.187.0.66:1337"
 	path      = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
 	maxChains = 1000
 )
@@ -334,9 +334,9 @@ func main() {
 
 func listenForMaster(slave *Slave) {
 	// log.Debug("Listening for slaves")
-	l, e := net.Listen("tcp", ":1337")
+	l, e := net.Listen("tcp", ":1336")
 	if e != nil {
-		log.Debug("error on listen")
+		log.Debug(e)
 	}
 	rpc.Accept(l)
 }

@@ -128,7 +128,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 }
 
 func (m *Master) Connect(ip string, reply *bool) (err error) {
-	conn, e := rpc.Dial("tcp", ip + ":1337")
+	conn, e := rpc.Dial("tcp", ip + ":1336")
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Connect error")
 	}
