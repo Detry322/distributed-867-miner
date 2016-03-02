@@ -98,6 +98,7 @@ two_way_collision run_step_a(uint8_t parentid[32], uint8_t root[32], uint64_t di
   return host_collision;
 }
 
+
 int main(int argc, char **argv) {
   srand(time(NULL));
   initializeCuda();
@@ -106,5 +107,8 @@ int main(int argc, char **argv) {
   uint64_t difficulty = 42;
   uint64_t timestamp = 1456441489431952896L;
   uint8_t version = 0;
-  run_step_a(parentid, root, difficulty, timestamp, version);
+  for (int i = 0; i < 100; i++) {
+    two_way_collision x = run_step_a(parentid, root, difficulty, timestamp, version);
+    printf("%lu %lu", x.nonces[0], x.nonces[1]);
+  }
 };
