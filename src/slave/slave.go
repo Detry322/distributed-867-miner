@@ -340,5 +340,3 @@ func listenForMaster(slave *Slave) {
 	}
 	rpc.Accept(l)
 }
-
-func (slave *Slave) 
