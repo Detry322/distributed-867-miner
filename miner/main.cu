@@ -63,7 +63,7 @@ void run_step_a(sha_base* host_input) {
   cudaMalloc(&input, sizeof(sha_base));
   cudaMemcpy(input, host_input, sizeof(sha_base), cudaMemcpyHostToDevice);
 
-  step_a_kernel<<<8, 128>>>(input, base_nonce);
+  step_a_kernel<<<16, 256>>>(input, base_nonce);
   cudaDeviceSynchronize();
 
   cudaFree(input);
