@@ -46,15 +46,13 @@ __global__ void step_a_kernel(sha_base* input, uint64_t base_nonce) {
   }
   __syncthreads();
   uint64_t initial_nonce = base_nonce + (blockIdx.x*blockDim.x+threadIdx.x);
-  uint64_t tortoise, hare;
-  tortoise = hare = initial_nonce;
-  int64_t max_int = (1L << (base.difficulty >> 1))/10;
-  for (int64_t i = 0; i < max_int; i++) {
-    tortoise = calculate_sha(tortoise);
-    hare = calculate_sha(calculate_sha(hare));
-    if (tortoise == hare) {
-      find_solution(base.timestamp, initial_nonce, tortoise);
-      return;
+  uint64_t distinguished_cutoff = 1L << (base.difficulty*2/3);
+  int64_t max_steps = 20L << (base.difficulty/3);
+  uint64_t d = initial_nonce;
+  for (int64_t i = 1; i < max_steps; i++) {
+    d = calculate_sha(d);
+    if (d < distinguished_cutoff) {
+      printf("A %lu %lu %lu %ld\n", base.timestamp, initial_nonce, d, i);
     }
   }
 };
