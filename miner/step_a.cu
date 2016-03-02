@@ -48,7 +48,7 @@ __global__ void step_a_kernel(sha_base* input, uint64_t base_nonce) {
   uint64_t initial_nonce = base_nonce + (blockIdx.x*blockDim.x+threadIdx.x);
   uint64_t tortoise, hare;
   tortoise = hare = initial_nonce;
-  int64_t max_int = (1L << (base.difficulty >> 1))/100;
+  int64_t max_int = (1L << (base.difficulty >> 1))/10;
   for (int64_t i = 0; i < max_int; i++) {
     tortoise = calculate_sha(tortoise);
     hare = calculate_sha(calculate_sha(hare));
