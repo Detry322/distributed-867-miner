@@ -22,7 +22,7 @@ const (
 	A         = 1
 	B         = 2
 	address   = "18.187.0.48:1337"
-	path      = "~/miner" // TODO: modify this to right path.
+	path      = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
 	maxChains = 1000
 )
 
@@ -51,6 +51,7 @@ Parses message from miner.
 */
 func (slave *Slave) ParseMessage(message string) {
 	// message = strings.TrimFunc(message)
+	log.Debug("message from miner: " + message)
 	reply := true
 	if len(message) == 0 {
 		return
@@ -119,9 +120,9 @@ Ends in newline.
 func (slave *Slave) MakeHMessage() string {
 	message := "H " + slave.Config.Block.ParentId +
 		" " + slave.Config.Block.Root + " "
-	common.AddHexDigits(message, slave.Config.Block.Difficulty, true)
+	message = common.AddHexDigits(message, slave.Config.Block.Difficulty, true)
 	message += " "
-	common.AddHexDigits(message, slave.Config.Block.Timestamp, true)
+	message = common.AddHexDigits(message, slave.Config.Block.Timestamp, true)
 	message += " "
 	// now just two hex bytes for version
 	array := make([]byte, 2)
@@ -142,17 +143,17 @@ func (slave *Slave) MakeBMessage() string {
 	message := "B"
 	for _, triple := range triples {
 		message += " "
-		common.AddHexDigits(message, triple.Chain1.Start, true)
+		message = common.AddHexDigits(message, triple.Chain1.Start, true)
 		message += " "
-		common.AddHexDigits(message, triple.Chain1.Length, false)
+		message = common.AddHexDigits(message, triple.Chain1.Length, false)
 		message += " "
-		common.AddHexDigits(message, triple.Chain2.Start, true)
+		message = common.AddHexDigits(message, triple.Chain2.Start, true)
 		message += " "
-		common.AddHexDigits(message, triple.Chain2.Length, false)
+		message = common.AddHexDigits(message, triple.Chain2.Length, false)
 		message += " "
-		common.AddHexDigits(message, triple.Chain3.Start, true)
+		message = common.AddHexDigits(message, triple.Chain3.Start, true)
 		message += " "
-		common.AddHexDigits(message, triple.Chain3.Length, false)
+		message = common.AddHexDigits(message, triple.Chain3.Length, false)
 	}
 	return message + "\n"
 }
@@ -176,8 +177,12 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	fmt.Println("actually starting part a")
 	slave.Mode = A
 	slave.Config = config
-	io.WriteString(slave.Stdin, slave.MakeHMessage())
-	io.WriteString(slave.Stdin, slave.MakeAMessage())
+	hMessage := slave.MakeHMessage()
+	io.WriteString(slave.Stdin, hMessage)
+	aMessage := slave.MakeAMessage()
+	io.WriteString(slave.Stdin, aMessage)
+	log.Debug(hMessage)
+	log.Debug(aMessage)
 	// send stuff to the miner
 	return nil
 }
