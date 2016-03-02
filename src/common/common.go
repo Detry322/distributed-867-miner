@@ -4,7 +4,7 @@ import ()
 
 type HashConfig struct {
 	Block Block
-	Targets []Collision
+	Triples []HashChainTriple
 }
 
 type HashChain struct {
