@@ -3,10 +3,9 @@ package main
 import (
 	"bufio"
 	"common"
-	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
-	"errors"
+	// "errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"io"
@@ -20,10 +19,11 @@ import (
 )
 
 const (
-	A       = 1
-	B       = 2
-	address = "18.187.0.48:1337"
-	path    = "~/miner" // TODO: modify this to right path.
+	A         = 1
+	B         = 2
+	address   = "18.187.0.48:1337"
+	path      = "~/miner" // TODO: modify this to right path.
+	maxChains = 1000
 )
 
 func init() {
@@ -38,11 +38,11 @@ type Slave struct {
 	mu           sync.Mutex
 	Master       *rpc.Client
 	Cmd          exec.Cmd
-	Stdin        *io.Writer
-	Stdout       *io.Reader
+	Stdin        io.Writer
+	Stdout       io.Reader
 	MinerStarted bool
 	HashChains   []common.HashChain
-	configChan   chan *common.HashConfig
+	configChan   chan common.HashConfig
 	messageChan  chan string
 }
 
@@ -50,10 +50,11 @@ type Slave struct {
 Parses message from miner.
 */
 func (slave *Slave) ParseMessage(message string) {
-	message = strings.TrimFunc(message)
+	// message = strings.TrimFunc(message)
+	reply := true
 	if len(message) == 0 {
 		return
-	} else if message[0] == "=" {
+	} else if string(message[0]) == "=" {
 		// this is a debug message
 		log.Debug("debug message: " + message)
 	} else {
@@ -71,8 +72,9 @@ func (slave *Slave) ParseMessage(message string) {
 			log.Debug("invalid timestamp")
 			return
 		}
+		timestamp := uint64(ts)
 		// check if timestamp is good
-		if ts != slave.Config.Block.Timestamp {
+		if timestamp != slave.Config.Block.Timestamp {
 			// we're done
 			log.Debug("timestamp on miner msg is different")
 			return
@@ -85,29 +87,29 @@ func (slave *Slave) ParseMessage(message string) {
 			return
 		}
 		if tokens[0] == "A" {
-			hashchain := common.HashChain {
-				Start : x,
-				End     :y,
-				Length   :z,
-				Timestamp :ts,
+			hashchain := common.HashChain{
+				Start:     uint64(x),
+				End:       uint64(y),
+				Length:    uint64(z),
+				Timestamp: uint64(ts),
 			}
+			slave.HashChains = append(slave.HashChains, hashchain)
+			if len(slave.HashChains) > maxChains {
+				slave.mu.Lock()
+				slave.Master.Call("Master.AddHashChains", slave.HashChains, &reply)
+				slave.HashChains = []common.HashChain{}
+			}
+			// TODO send rpc to sidd
 		} else if tokens[0] == "B" {
-			collision := common.CollisionB{X: uint64(x), Hash: uint64(yhash), Timestamp: uint64(ts)}
-			slave.NewCollisionB(collision)
+			collision := common.Collision{
+				Nonce1:    uint64(x),
+				Nonce2:    uint64(y),
+				Nonce3:    uint64(z),
+				Timestamp: uint64(ts),
+			}
+			slave.Master.Call("Master.SubmitAnswer", collision, &reply)
 		}
 	}
-}
-
-/*
-This will send the miner a bytearray representing all the triples of triples he needs to check.
-*/
-func (slave *Slave) SendHashChainTripleList(triples []common.HashChainTriple, reply *bool) (err error) {
-	*reply = true
-	n, err := slave.Cmd.Stdin.Write(triples.convertToBytes())
-	if err != nil {
-		log.Debug("couldn't write everything for some reason.")
-	}
-	return nil
 }
 
 /*
@@ -117,14 +119,14 @@ Ends in newline.
 func (slave *Slave) MakeHMessage() string {
 	message := "H " + slave.Config.Block.ParentId +
 		" " + slave.Config.Block.Root + " "
-	common.AddHexDigits(message, slave.Config.Block.Diffulty, true)
+	common.AddHexDigits(message, slave.Config.Block.Difficulty, true)
 	message += " "
 	common.AddHexDigits(message, slave.Config.Block.Timestamp, true)
 	message += " "
 	// now just two hex bytes for version
-	array := make([]byte, 4)
-	binary.BigEndian.PutUint16(array, slave.Config.Block.Version)
-	message += hex.EncodeToString(array)[2:]
+	array := make([]byte, 2)
+	binary.BigEndian.PutUint16(array, uint16(slave.Config.Block.Version))
+	message += hex.EncodeToString(array)
 	return message + "\n"
 }
 
@@ -138,20 +140,19 @@ func (slave *Slave) MakeAMessage() string {
 func (slave *Slave) MakeBMessage() string {
 	triples := slave.Config.Triples
 	message := "B"
-	stream := []byte{}
 	for _, triple := range triples {
 		message += " "
-		AddHexDigits(message, triple.Chain1.Start, true)
+		common.AddHexDigits(message, triple.Chain1.Start, true)
 		message += " "
-		AddHexDigits(message, triple.Chain1.Length, false)
+		common.AddHexDigits(message, triple.Chain1.Length, false)
 		message += " "
-		AddHexDigits(message, triple.Chain2.Start, true)
+		common.AddHexDigits(message, triple.Chain2.Start, true)
 		message += " "
-		AddHexDigits(message, triple.Chain2.Length, false)
+		common.AddHexDigits(message, triple.Chain2.Length, false)
 		message += " "
-		AddHexDigits(message, triple.Chain3.Start, true)
+		common.AddHexDigits(message, triple.Chain3.Start, true)
 		message += " "
-		AddHexDigits(message, triple.Chain3.Length, false)
+		common.AddHexDigits(message, triple.Chain3.Length, false)
 	}
 	return message + "\n"
 }
@@ -160,6 +161,7 @@ func (slave *Slave) MakeBMessage() string {
 RPC called by master
 */
 func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error) {
+	fmt.Println("tring to start part a")
 	slave.mu.Lock()
 	defer slave.mu.Unlock()
 	if config.Block.Timestamp <= slave.Config.Block.Timestamp {
@@ -171,6 +173,7 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 		slave.configChan <- config
 		return
 	}
+	fmt.Println("actually starting part a")
 	slave.Mode = A
 	slave.Config = config
 	io.WriteString(slave.Stdin, slave.MakeHMessage())
@@ -182,17 +185,22 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 // continuously checks if the process has output anything
 func (slave *Slave) checkProcess() {
 	var oldData []byte
+	bufreader := bufio.NewReader(slave.Stdout)
 	for {
 		// read from stdoutpipe
-		data, isPrefix, err := slave.Stdout.ReadLine()
+		data, isPrefix, _ := bufreader.ReadLine()
+		for _, d := range data {
+			oldData = append(oldData, d)
+		}
 		if isPrefix {
-			oldData = append(oldData, data)
+			continue
+			// oldData = append(oldData, data)
 		} else {
-			allData = append(oldData, data)
-			if len(allData == 0) {
+			allData := oldData
+			if len(allData) == 0 {
 				continue
 			}
-			oldData = make([]byte)
+			oldData = []byte{}
 			// now send our message.
 			slave.messageChan <- string(allData)
 		}
@@ -255,27 +263,21 @@ func getIPAddress() (s string, err error) {
 	return "", nil
 }
 
-func (slave *Slave) listenToMiner() {
-	for {
-
-	}
-}
-
 func (slave *Slave) listen() {
 	reply := false
 	for {
 		select {
-			case config := <- slave.configChan {
-				if len(config.Triples) > 0 {
-					slave.StartStepB(config, &reply)
-				} else {
-					slave.configChan <- config
-				}
+		case config := <-slave.configChan:
+			if len(config.Triples) > 0 {
+				slave.StartStepB(config, &reply)
+			} else {
+				slave.configChan <- config
 			}
-			case message <- slave.messageChan {
-				// new message to act on.
-				slave.ParseMessage(message)
-			}
+		case message := <-slave.messageChan:
+			// new message to act on.
+			slave.ParseMessage(message)
+		default:
+			<-time.NewTimer(time.Second / 4).C
 		}
 	}
 }
@@ -291,10 +293,8 @@ func initiateConnection(slave *Slave) {
 	ip, err := getIPAddress()
 	if err != nil {
 		// ip addr is fucked.
-
 	}
 	reply := false
-	<-time.NewTimer(time.Second * 20).C
 	err = slave.Master.Call("Master.Connect", ip, &reply)
 	if err != nil {
 		fmt.Println(err)
@@ -308,12 +308,12 @@ This just starts the miner process
 */
 func (slave *Slave) startMiner() {
 	// start process, set slave.Cmd
-	slave.Cmd = exec.Command(path)
+	slave.Cmd = *exec.Command(path)
 	// set stdin and stdout pipes
-	stdinpipe, err := slave.Cmd.StdinPipe()
-	slave.Stdin = &bufio.NewWriter(stdinpipe)
-	stdoutpipe, err := slave.Cmd.StdoutPipe()
-	slave.Stdout = &bufio.NewReader(stdoutpipe)
+	stdinpipe, _ := slave.Cmd.StdinPipe()
+	slave.Stdin = bufio.NewWriter(stdinpipe)
+	stdoutpipe, _ := slave.Cmd.StdoutPipe()
+	slave.Stdout = bufio.NewReader(stdoutpipe)
 	// send jack necessary info.
 
 }
@@ -323,10 +323,10 @@ Runs on startup
 */
 func main() {
 	slave := &Slave{
-		configChan:  make(chan common.Config, 100),
+		configChan:  make(chan common.HashConfig, 100),
 		messageChan: make(chan string, 1000),
 	}
-	slave.startMiner()
+	go slave.startMiner()
 	go listenForMaster(slave) // runs forever, accepting RPCs.
 	initiateConnection(slave)
 }

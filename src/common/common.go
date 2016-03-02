@@ -24,9 +24,9 @@ type HashChainTriple struct {
 }
 
 type Collision struct {
-	Nonce1 uint64
-	Nonce2 uint64
-	Nonce3 uint64
+	Nonce1    uint64
+	Nonce2    uint64
+	Nonce3    uint64
 	Timestamp uint64
 }
 
@@ -42,13 +42,13 @@ type Block struct {
 func AddHexDigits(message string, newInt uint64, want16 bool) {
 	if want16 {
 		// make it 16 bytes
-		array := make([]byte, 16)
+		array := make([]byte, 8)
 		binary.BigEndian.PutUint64(array, newInt)
 		message = message + hex.EncodeToString(array)
 	} else {
 		// make it 8 bytes
-		array := make([]byte, 8)
-		binary.BigEndian.PutUint32(array, newInt)
+		array := make([]byte, 4)
+		binary.BigEndian.PutUint32(array, uint32(newInt))
 		message = message + hex.EncodeToString(array)
 	}
 }
