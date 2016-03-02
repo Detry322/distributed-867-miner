@@ -53,6 +53,7 @@ __global__ void step_a_kernel(sha_base* input, uint64_t base_nonce) {
     d = calculate_sha(d);
     if (d < distinguished_cutoff) {
       printf("A %lu %lu %lu %ld\n", base.timestamp, initial_nonce, d, i);
+      return;
     }
   }
 };
