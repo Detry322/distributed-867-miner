@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
   struct pollfd stdin_poll = { .fd = STDIN_FILENO, .events = POLLIN | POLLRDBAND | POLLRDNORM | POLLPRI };
   while (true) {
     string input;
-    if (poll(&stdin_poll, 1, 0) == 1) {
+    if (poll(&stdin_poll, 1, 0) == 1 && !cin.eof()) {
       getline(cin, input);
       const char* cstr = input.c_str();
       if (cstr[0] == 'H') {
