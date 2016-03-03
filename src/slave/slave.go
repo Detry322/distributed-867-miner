@@ -51,13 +51,13 @@ Parses message from miner.
 */
 func (slave *Slave) ParseMessage(message string) {
 	// message = strings.TrimFunc(message)
-	log.Debug("message from miner: " + message)
+	//log.Debug("message from miner: " + message)
 	reply := true
 	if len(message) == 0 {
 		return
 	} else if string(message[0]) == "=" {
 		// this is a debug message
-		log.Debug("debug message: " + message)
+		//log.Debug("debug message: " + message)
 	} else {
 		// non debug
 		// A timestamp nonce nonce
@@ -127,7 +127,7 @@ func (slave *Slave) MakeHMessage() string {
 	// now just two hex bytes for version
 	array := make([]byte, 2)
 	binary.BigEndian.PutUint16(array, uint16(slave.Config.Block.Version))
-	message += hex.EncodeToString(array)
+	message += hex.EncodeToString(array[1:])
 	return message + "\n"
 }
 
@@ -180,8 +180,9 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	hMessage := slave.MakeHMessage()
 	io.WriteString(slave.Stdin, hMessage)
 	aMessage := slave.MakeAMessage()
-	io.WriteString(slave.Stdin, aMessage)
 	log.Debug(hMessage)
+	time.Sleep(2000 * time.Millisecond)
+	io.WriteString(slave.Stdin, aMessage)
 	log.Debug(aMessage)
 	// send stuff to the miner
 	return nil
@@ -206,7 +207,8 @@ func (slave *Slave) checkProcess() {
 				continue
 			}
 			oldData = []byte{}
-			// now send our message.
+			// now send our message
+			fmt.Println(string(allData))
 			slave.messageChan <- string(allData)
 		}
 	}
@@ -269,6 +271,7 @@ func getIPAddress() (s string, err error) {
 }
 
 func (slave *Slave) listen() {
+	//go slave.checkProcess()
 	reply := false
 	for {
 		select {
@@ -319,8 +322,9 @@ func (slave *Slave) startMiner() {
 	slave.Stdin = bufio.NewWriter(stdinpipe)
 	stdoutpipe, _ := slave.Cmd.StdoutPipe()
 	slave.Stdout = bufio.NewReader(stdoutpipe)
-	// send jack necessary info.
-
+	go (&slave.Cmd).Run()
+	go slave.checkProcess()
+	time.Sleep(3000 * time.Millisecond)
 }
 
 /*
@@ -332,7 +336,7 @@ func main() {
 		messageChan: make(chan string, 1000),
 	}
 	rpc.Register(slave)
-	go slave.startMiner()
+	slave.startMiner()
 	go listenForMaster(slave) // runs forever, accepting RPCs.
 	initiateConnection(slave)
 }
