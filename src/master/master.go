@@ -14,10 +14,12 @@ import "bytes"
 import "fmt"
 
 const NODE_URL = "http://6857coin.csail.mit.edu:8080"
+const GENESIS_HASH = "169740d5c4711f3cbbde6b9bfbbe8b3d236879d849d1c137660fce9e7884cae7"
 const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const SEND_THRESHOLD = 1024
+const MINE_ON_GENESIS = true
 
 func init() {
   // Only log the warning severity or above.
@@ -52,6 +54,9 @@ func main() {
 	
 	for {
 		b := getNextBlock()
+		if MINE_ON_GENESIS {
+			b = getGenesisBlock()
+		}
 		master.mu.Lock()
 		if b.ParentId != master.LastBlock.ParentId {
 			fmt.Println("Mining on new block")
@@ -102,6 +107,27 @@ func getNextBlock() common.Block {
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Decoder failed")
 	}
+
+	fmt.Println("getNextBlock returned")
+
+	return data
+}
+
+func getGenesisBlock() common.Block {
+	res, e := http.Get(NODE_URL + "/block/" + GENESIS_HASH)
+	if e != nil {
+		log.WithFields(log.Fields{"error": e}).Error("Genesis block failed")
+	}
+	defer res.Body.Close()
+
+	decoder := json.NewDecoder(res.Body)
+	var data common.Block
+	e = decoder.Decode(&data)
+	if e != nil {
+		log.WithFields(log.Fields{"error": e}).Error("Decoder failed")
+	}
+
+	fmt.Println("getGenesisBlock returned")
 
 	return data
 }
