@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	A         = 1
-	B         = 2
-	address   = "172.31.14.55:1337"                     //"18.187.0.66:1337"
+	A       = 1
+	B       = 2
+	address = "172.31.14.55:1337" //"18.187.0.66:1337"
 	//address   = "107.20.178.226:1337" //"18.187.0.66:1337"
 	path      = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
 	maxChains = 2000
@@ -240,6 +240,7 @@ func (slave *Slave) NewHashChain(start, end, length, timestamp uint64) {
 This is used when we want this slave to transition from
 */
 func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error) {
+	log.Debug("TRYING TO START PART B!")
 	slave.mu.Lock()
 	defer slave.mu.Unlock()
 	if config.Block.Timestamp < slave.Config.Block.Timestamp {
@@ -252,6 +253,7 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 	}
 	//empty hashchains, update config and send miner the triples.
 	slave.HashChains = []common.HashChain{}
+	log.Debug("ACTUALY STARTING PART B!!")
 	if slave.Config.Block.Timestamp < config.Block.Timestamp {
 		slave.Config = config
 		io.WriteString(slave.Stdin, slave.MakeHMessage())
