@@ -81,7 +81,7 @@ func (slave *Slave) ParseMessage(message string) {
 		}
 		x, e1 := strconv.Atoi(tokens[2])
 		y, e2 := strconv.Atoi(tokens[3])
-		z, e3 := strconv.Atoi(tokens[2])
+		z, e3 := strconv.Atoi(tokens[4])
 		if e1 != nil || e2 != nil || e3 != nil {
 			log.Debug("invalid ints from miner")
 			return
