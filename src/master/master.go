@@ -185,9 +185,9 @@ func (m *Master) checkPartADone() bool {
 
 func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err error) {
 	m.mu.Lock()
+	fmt.Println("Received hashchains")
 	for _, chain := range chains {
 		if chain.Timestamp == m.LastBlock.Timestamp {
-			fmt.Println("Found hashchain")
 			entry, ok := m.HashChainMap[chain.End]
 			lengthEndpoint := 1
 
