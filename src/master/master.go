@@ -13,6 +13,7 @@ import "crypto/sha256"
 import "bytes"
 import "fmt"
 
+const NANOS_PER_MINUTE = 1000 * 1000 * 1000 * 60
 const NODE_URL = "http://6857coin.csail.mit.edu:8080"
 const GENESIS_HASH = "169740d5c4711f3cbbde6b9bfbbe8b3d236879d849d1c137660fce9e7884cae7"
 const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
@@ -69,7 +70,7 @@ func main() {
 			master.HashChainTriples = make([]common.HashChainTriple, 0)
 			master.HashChainTriplesIndex = 0
 			go master.solveBlock()
-		} else if time.Since(master.LastBlock.Timestamp).Minutes() > TIMESTAMP_WINDOW_IN_MINUTES {
+		} else if (uint64(time.Now().UnixNano()) - master.LastBlock.Timestamp)/NANOS_PER_MINUTE > TIMESTAMP_WINDOW_IN_MINUTES {
 			master.LastBlock.Timestamp = uint64(time.Now().UnixNano())
 		}
 		master.mu.Unlock()
