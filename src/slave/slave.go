@@ -24,7 +24,7 @@ const (
 	address   = "172.31.14.55:1337"                     //"18.187.0.66:1337"
 	//address   = "107.20.178.226:1337" //"18.187.0.66:1337"
 	path      = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
-	maxChains = 1000
+	maxChains = 2000
 )
 
 func init() {
@@ -95,13 +95,13 @@ func (slave *Slave) ParseMessage(message string) {
 				Length:    uint64(z),
 				Timestamp: uint64(ts),
 			}
+			slave.mu.Lock()
 			slave.HashChains = append(slave.HashChains, hashchain)
 			if len(slave.HashChains) > maxChains {
-				slave.mu.Lock()
 				slave.Master.Call("Master.AddHashChains", slave.HashChains, &reply)
 				slave.HashChains = []common.HashChain{}
 			}
-			// TODO send rpc to sidd
+			slave.mu.Unlock()
 		} else if tokens[0] == "B" {
 			collision := common.Collision{
 				Nonce1:    uint64(x),
@@ -299,6 +299,11 @@ func (slave *Slave) listen() {
 	}
 }
 
+func (slave *Slave) checkAlive() {
+	slave.Cmd.Wait()
+	log.Debug("Miner is done running!!!")
+}
+
 func initiateConnection(slave *Slave) {
 	client, err := rpc.Dial("tcp", address)
 	if err != nil {
@@ -333,6 +338,7 @@ func (slave *Slave) startMiner() {
 	slave.Stdout = bufio.NewReader(stdoutpipe)
 	(&slave.Cmd).Start()
 	go slave.checkProcess()
+	go slave.checkAlive()
 	time.Sleep(3000 * time.Millisecond)
 }
 
