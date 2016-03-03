@@ -56,7 +56,7 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
     }
     break;
   };
-  if (chain1.start == chain2.start || chain1.start == chain3.start || chain2.start == chain3.start)
+  if (chain1 == chain2 || chain1 == chain3 || chain2 == chain3)
     return;
   // checking for collisions;
   uint64_t t1, t2, t3;

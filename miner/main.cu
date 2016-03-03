@@ -196,8 +196,8 @@ int main(int argc, char **argv) {
       getline(cin, input);
       if (input.length() == 0)
         continue;
-      cout << "= Length: " << input.length() << endl;
-      cout << "= Received: " << input << endl;
+      if (input.length() < 180)
+        cout << "= Received: " << input << endl;
       const char* cstr = input.c_str();
       if (cstr[0] == 'H') {
         handle_update_base(cstr);

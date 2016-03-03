@@ -17,7 +17,7 @@ all: $(objects)
 	$(NVCC) -arch=sm_30 $(objects) -o $(TARGET)
 
 %.o: %.cu
-	$(NVCC) -arch=sm_30 -I. -dc $< -o $@
+	$(NVCC) -Xptxas=-v -arch=sm_30 -I. -dc $< -o $@
 
 clean:
 	rm -f *.o $(TARGET)
