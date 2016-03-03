@@ -195,6 +195,10 @@ func (slave *Slave) checkProcess() {
 	for {
 		// read from stdoutpipe
 		data, isPrefix, _ := bufreader.ReadLine()
+		if len(data) == 0 {
+			continue
+		}
+		fmt.Println(string(data))
 		for _, d := range data {
 			oldData = append(oldData, d)
 		}
