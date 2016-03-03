@@ -212,6 +212,9 @@ int main(int argc, char **argv) {
         cout << "===== Error: Received a line of garbage input" << endl;
       }
     } else {
+      if (cin.eof()) {
+        exit(0);
+      }
       if (state == STATE_DOING_NOTHING) {
         this_thread::yield();
       } else if (state == STATE_WORKING_A) {
