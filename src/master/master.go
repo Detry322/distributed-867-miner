@@ -20,8 +20,8 @@ const GENESIS_HASH = "169740d5c4711f3cbbde6b9bfbbe8b3d236879d849d1c137660fce9e78
 const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
-const TIMESTAMP_WINDOW_IN_MINUTES = 5
-const SEND_THRESHOLD = 1024
+const TIMESTAMP_WINDOW_IN_MINUTES = 9
+const SEND_THRESHOLD = 128
 const MINE_ON_GENESIS = false
 
 func init() {
@@ -54,25 +54,23 @@ func main() {
 	master.NextSlave = 0
 	rpc.Register(master)
 	go listenForSlaves(master)
-	
+
 	for {
 		b := getNextBlock()
 		if MINE_ON_GENESIS {
 			b = getGenesisBlock()
 		}
 		master.mu.Lock()
-		if b.ParentId != master.LastBlock.ParentId {
+		if b.ParentId != master.LastBlock.ParentId || (int64(time.Now().UnixNano()) - int64(master.LastBlock.Timestamp))/NANOS_PER_MINUTE > TIMESTAMP_WINDOW_IN_MINUTES {
 			fmt.Println("Mining on new block")
 			master.LastBlock = b
-			master.LastBlock.Timestamp = uint64(time.Now().UnixNano())
+			master.LastBlock.Timestamp = uint64(time.Now().Add(time.Minute * time.Duration(TIMESTAMP_WINDOW_IN_MINUTES))UnixNano().)
 			shaHash := sha256.Sum256([]byte(BLOCK_TEXT))
 			master.LastBlock.Root = hex.EncodeToString(shaHash[:])
 			master.HashChainMap = make(map[uint64][]common.HashChain)
 			master.HashChainTriples = make([]common.HashChainTriple, 0)
 			master.HashChainTriplesIndex = 0
 			go master.solveBlock()
-		} else if (uint64(time.Now().UnixNano()) - master.LastBlock.Timestamp)/NANOS_PER_MINUTE > TIMESTAMP_WINDOW_IN_MINUTES {
-			master.LastBlock.Timestamp = uint64(time.Now().UnixNano())
 		}
 		master.mu.Unlock()
 		time.Sleep(time.Millisecond * time.Duration(SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS))
@@ -151,7 +149,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 	}
 	encoded := string(s)
 	fmt.Println(encoded)
-	
+
 	resp, e := http.Post(NODE_URL + "/add", "encoding/json", bytes.NewBuffer([]byte(encoded)))
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Marshalling Failed")
@@ -231,12 +229,12 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 					fmt.Println("Part a done")
 					args := common.HashConfig{m.LastBlock, m.HashChainTriples[m.HashChainTriplesIndex : m.HashChainTriplesIndex + SEND_THRESHOLD]}
 					reply := false
-					
+
 					done := false
 					for !done {
 						fmt.Println("Calling part b rpc")
 						e := m.Slaves[m.NextSlave].conn.Call("Slave.StartStepB", args, &reply)
-						
+
 						if e == nil {
 							done = true
 						}
