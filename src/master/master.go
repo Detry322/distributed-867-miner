@@ -2,6 +2,7 @@ package main
 
 import ( log "github.com/Sirupsen/logrus" )
 import "sync"
+import "strconv"
 import "net/rpc"
 import "net"
 import "time"
@@ -224,7 +225,7 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 				}
 
 				m.HashChainTriples = append(m.HashChainTriples, common.HashChainTriple{entry[0], entry[1], entry[2]})
-				fmt.Println("Appended triple")
+				fmt.Println("Appended triple " + strconv.Itoa(len(m.HashChainTriples) - int(m.HashChainTriplesIndex)))
 
 				if m.checkPartADone() {
 					args := common.HashConfig{m.LastBlock, m.HashChainTriples[m.HashChainTriplesIndex : m.HashChainTriplesIndex + SEND_THRESHOLD]}
