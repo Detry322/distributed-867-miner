@@ -21,7 +21,7 @@ import (
 const (
 	A         = 1
 	B         = 2
-	address   = "172.31.14.55:1337" //"18.187.0.66:1337"
+	address   = "172.31.14.55:1337"                     //"18.187.0.66:1337"
 	path      = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
 	maxChains = 1000
 )
@@ -206,10 +206,10 @@ func (slave *Slave) checkProcess() {
 			if len(allData) == 0 {
 				continue
 			}
+			slave.messageChan <- string(allData)
 			oldData = []byte{}
 			// now send our message
 			fmt.Println(string(allData))
-			slave.messageChan <- string(allData)
 		}
 	}
 }
@@ -322,7 +322,7 @@ func (slave *Slave) startMiner() {
 	slave.Stdin = bufio.NewWriter(stdinpipe)
 	stdoutpipe, _ := slave.Cmd.StdoutPipe()
 	slave.Stdout = bufio.NewReader(stdoutpipe)
-	go (&slave.Cmd).Run()
+	(&slave.Cmd).Start()
 	go slave.checkProcess()
 	time.Sleep(3000 * time.Millisecond)
 }
