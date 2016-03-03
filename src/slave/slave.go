@@ -21,8 +21,8 @@ import (
 const (
 	A         = 1
 	B         = 2
-	//address   = "172.31.14.55:1337"                     //"18.187.0.66:1337"
-	address   = "107.20.178.226:1337" //"18.187.0.66:1337"
+	address   = "172.31.14.55:1337"                     //"18.187.0.66:1337"
+	//address   = "107.20.178.226:1337" //"18.187.0.66:1337"
 	path      = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
 	maxChains = 1000
 )
@@ -39,8 +39,8 @@ type Slave struct {
 	mu           sync.Mutex
 	Master       *rpc.Client
 	Cmd          exec.Cmd
-	Stdin        io.Writer
-	Stdout       io.Reader
+	Stdin        *bufio.Writer
+	Stdout       *bufio.Reader
 	MinerStarted bool
 	HashChains   []common.HashChain
 	configChan   chan common.HashConfig
@@ -194,7 +194,7 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 // continuously checks if the process has output anything
 func (slave *Slave) checkProcess() {
 	var oldData []byte
-	bufreader := bufio.NewReader(slave.Stdout)
+	bufreader := (slave.Stdout)
 	for {
 		// read from stdoutpipe
 		data, isPrefix, _ := bufreader.ReadLine()
