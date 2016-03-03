@@ -18,6 +18,7 @@ const GENESIS_HASH = "169740d5c4711f3cbbde6b9bfbbe8b3d236879d849d1c137660fce9e78
 const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
+const TIMESTAMP_WINDOW_IN_MINUTES = 5
 const SEND_THRESHOLD = 1024
 const MINE_ON_GENESIS = true
 
@@ -68,6 +69,8 @@ func main() {
 			master.HashChainTriples = make([]common.HashChainTriple, 0)
 			master.HashChainTriplesIndex = 0
 			go master.solveBlock()
+		} else if time.Since(master.LastBlock.Timestamp).Minutes() > TIMESTAMP_WINDOW_IN_MINUTES {
+			master.LastBlock.Timestamp = uint64(time.Now().UnixNano())
 		}
 		master.mu.Unlock()
 		time.Sleep(time.Millisecond * time.Duration(SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS))
