@@ -64,7 +64,7 @@ func main() {
 		if b.ParentId != master.LastBlock.ParentId || (int64(time.Now().UnixNano()) - int64(master.LastBlock.Timestamp))/NANOS_PER_MINUTE > TIMESTAMP_WINDOW_IN_MINUTES {
 			fmt.Println("Mining on new block")
 			master.LastBlock = b
-			master.LastBlock.Timestamp = uint64(time.Now().Add(time.Minute * time.Duration(TIMESTAMP_WINDOW_IN_MINUTES))UnixNano().)
+			master.LastBlock.Timestamp = uint64(time.Now().Add(time.Minute * time.Duration(TIMESTAMP_WINDOW_IN_MINUTES)).UnixNano())
 			shaHash := sha256.Sum256([]byte(BLOCK_TEXT))
 			master.LastBlock.Root = hex.EncodeToString(shaHash[:])
 			master.HashChainMap = make(map[uint64][]common.HashChain)
@@ -227,24 +227,8 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 
 				if m.checkPartADone() {
 					fmt.Println("Part a done")
-					args := common.HashConfig{m.LastBlock, m.HashChainTriples[m.HashChainTriplesIndex : m.HashChainTriplesIndex + SEND_THRESHOLD]}
-					reply := false
 
-					done := false
-					for !done {
-						fmt.Println("Calling part b rpc")
-						e := m.Slaves[m.NextSlave].conn.Call("Slave.StartStepB", args, &reply)
-
-						if e == nil {
-							done = true
-						}
-
-						m.NextSlave++
-						if m.NextSlave >= uint64(len(m.Slaves)) {
-							m.NextSlave = 0
-						}
-					}
-
+					go sendPartBRequest(m, m.HashChainTriplesIndex, m.LastBlock.Timestamp)
 
 					m.HashChainTriplesIndex += SEND_THRESHOLD
 				}
@@ -254,6 +238,32 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 	m.mu.Unlock()
 
 	return nil
+}
+
+func sendPartBRequest(m *Master, idx uint64, timestamp uint64) {
+	m.mu.Lock()
+	if m.LastBlock.Timestamp != timestamp {
+		return
+	}
+	args := common.HashConfig{m.LastBlock, m.HashChainTriples[idx : idx + SEND_THRESHOLD]}
+	reply := false
+
+	done := false
+	for !done {
+		fmt.Println("Calling part b rpc")
+		e := m.Slaves[m.NextSlave].conn.Call("Slave.StartStepB", args, &reply)
+
+		if e == nil {
+			done = true
+		}
+
+		m.NextSlave++
+		if m.NextSlave >= uint64(len(m.Slaves)) {
+			m.NextSlave = 0
+		}
+	}
+
+	m.mu.Unlock()
 }
 
 
