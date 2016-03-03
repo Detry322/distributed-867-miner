@@ -20,7 +20,7 @@ const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 5
 const SEND_THRESHOLD = 1024
-const MINE_ON_GENESIS = true
+const MINE_ON_GENESIS = false
 
 func init() {
   // Only log the warning severity or above.
@@ -160,7 +160,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 }
 
 func (m *Master) Connect(ip string, reply *bool) (err error) {
-	conn, e := rpc.Dial("tcp", ip + ":1337")
+	conn, e := rpc.Dial("tcp", ip + ":1336")
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Connect error")
 	}
