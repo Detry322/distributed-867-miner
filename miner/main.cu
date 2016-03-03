@@ -161,7 +161,7 @@ void handle_start_a(const char* input) {
     cout << "= Error: Starting A but haven't received base. Will prolly segfault" << endl;
   }
   state = STATE_WORKING_A;
-  cout << "=== Starting A..." << endl;
+  cout << "=== Working A..." << endl;
 };
 
 void handle_start_b(const char* input) {
@@ -179,11 +179,7 @@ void handle_start_b(const char* input) {
     }
   }
   state = STATE_WORKING_B;
-  cout << "=== Starting B..." << endl;
-  cout << "= Example triple:" << endl;
-  for (int i = 0; i < 3; i++) {
-    cout << "= Chain start: " << part_b_triples[1].chains[i].start << " Length: " << part_b_triples[1].chains[i].length << endl;
-  }
+  cout << "=== Working B..." << endl;
 };
 
 int main(int argc, char **argv) {
@@ -196,8 +192,6 @@ int main(int argc, char **argv) {
       getline(cin, input);
       if (input.length() == 0)
         continue;
-      if (input.length() < 180)
-        cout << "= Received: " << input << endl;
       const char* cstr = input.c_str();
       if (cstr[0] == 'H') {
         handle_update_base(cstr);
