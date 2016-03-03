@@ -1,6 +1,8 @@
 package main
 
-import ( log "github.com/Sirupsen/logrus" )
+import (
+	log "github.com/Sirupsen/logrus"
+)
 import "sync"
 import "strconv"
 import "net/rpc"
@@ -25,27 +27,25 @@ const SEND_THRESHOLD = 128
 const MINE_ON_GENESIS = false
 
 func init() {
-  // Only log the warning severity or above.
-  log.SetLevel(log.DebugLevel)
+	// Only log the warning severity or above.
+	log.SetLevel(log.DebugLevel)
 }
 
 type Master struct {
-	Slaves []Slave
-	LastBlock common.Block
-	HashChainMap map[uint64][]common.HashChain
-	HashChainTriples []common.HashChainTriple
+	Slaves                []Slave
+	LastBlock             common.Block
+	HashChainMap          map[uint64][]common.HashChain
+	HashChainTriples      []common.HashChainTriple
 	HashChainTriplesIndex uint64
-	NextSlave uint64
-	mu sync.Mutex
+	NextSlave             uint64
+	mu                    sync.Mutex
 }
 
 type Slave struct {
 	conn *rpc.Client
 }
 
-
 func main() {
-	fmt.Println("Obligatory fmt")
 	log.Debug("Entered main")
 	master := &Master{}
 	master.Slaves = make([]Slave, 0)
@@ -61,7 +61,7 @@ func main() {
 			b = getGenesisBlock()
 		}
 		master.mu.Lock()
-		if b.ParentId != master.LastBlock.ParentId || (int64(time.Now().UnixNano()) - int64(master.LastBlock.Timestamp))/NANOS_PER_MINUTE > TIMESTAMP_WINDOW_IN_MINUTES {
+		if b.ParentId != master.LastBlock.ParentId || (int64(time.Now().UnixNano())-int64(master.LastBlock.Timestamp))/NANOS_PER_MINUTE > TIMESTAMP_WINDOW_IN_MINUTES {
 			fmt.Println("Mining on new block")
 			master.LastBlock = b
 			master.LastBlock.Timestamp = uint64(time.Now().Add(time.Minute * time.Duration(TIMESTAMP_WINDOW_IN_MINUTES)).UnixNano())
@@ -137,10 +137,11 @@ func getGenesisBlock() common.Block {
 
 type BlockRequest struct {
 	Block common.Block
-	Tag string
+	Tag   string
 }
 
 func commitBlock(master *Master, b common.Block, text string) {
+	log.Error("Attempting to commit block!!!!!!!")
 	master.mu.Lock()
 	br := BlockRequest{b, text}
 	s, e := json.Marshal(br)
@@ -150,7 +151,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 	encoded := string(s)
 	fmt.Println(encoded)
 
-	resp, e := http.Post(NODE_URL + "/add", "encoding/json", bytes.NewBuffer([]byte(encoded)))
+	resp, e := http.Post(NODE_URL+"/add", "encoding/json", bytes.NewBuffer([]byte(encoded)))
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Marshalling Failed")
 	}
@@ -160,7 +161,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 }
 
 func (m *Master) Connect(ip string, reply *bool) (err error) {
-	conn, e := rpc.Dial("tcp", ip + ":1336")
+	conn, e := rpc.Dial("tcp", ip+":1336")
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Connect error")
 	}
@@ -184,7 +185,6 @@ func (m *Master) checkPartADone() bool {
 
 func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err error) {
 	m.mu.Lock()
-	fmt.Println("Received hashchains")
 	for _, chain := range chains {
 		if chain.Timestamp == m.LastBlock.Timestamp {
 			entry, ok := m.HashChainMap[chain.End]
@@ -223,10 +223,10 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 				}
 
 				m.HashChainTriples = append(m.HashChainTriples, common.HashChainTriple{entry[0], entry[1], entry[2]})
-				fmt.Println("Appended triple " + strconv.Itoa(len(m.HashChainTriples) - int(m.HashChainTriplesIndex)))
-
+				if len(m.HashChainTriples)%1000 == 0 {
+					log.Debug("triples", strconv.Itoa(len(m.HashChainTriples)))
+				}
 				if m.checkPartADone() {
-					fmt.Println("Part a done")
 
 					go sendPartBRequest(m, m.HashChainTriplesIndex, m.LastBlock.Timestamp)
 
@@ -245,7 +245,7 @@ func sendPartBRequest(m *Master, idx uint64, timestamp uint64) {
 	if m.LastBlock.Timestamp != timestamp {
 		return
 	}
-	args := common.HashConfig{m.LastBlock, m.HashChainTriples[idx : idx + SEND_THRESHOLD]}
+	args := common.HashConfig{m.LastBlock, m.HashChainTriples[idx : idx+SEND_THRESHOLD]}
 	reply := false
 
 	done := false
@@ -265,7 +265,6 @@ func sendPartBRequest(m *Master, idx uint64, timestamp uint64) {
 
 	m.mu.Unlock()
 }
-
 
 func (m *Master) SubmitAnswer(triple common.Collision, reply *bool) (err error) {
 	m.mu.Lock()

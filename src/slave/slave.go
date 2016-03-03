@@ -144,7 +144,6 @@ func (slave *Slave) MakeAMessage() string {
 func (slave *Slave) MakeBMessage() string {
 	triples := slave.Config.Triples
 	message := "B"
-	log.Debug("about to loop through triples")
 	for _, triple := range triples {
 		message += " "
 		message = common.AddHexDigits(message, triple.Chain1.Start, true)
@@ -159,7 +158,6 @@ func (slave *Slave) MakeBMessage() string {
 		message += " "
 		message = common.AddHexDigits(message, triple.Chain3.Length, false)
 	}
-	log.Debug("made part b message, returning")
 	return message + "\n"
 }
 
@@ -167,24 +165,20 @@ func (slave *Slave) MakeBMessage() string {
 RPC called by master
 */
 func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error) {
-	fmt.Println("tring to start part a")
 	slave.mu.Lock()
 	defer slave.mu.Unlock()
 	if config.Block.Timestamp < slave.Config.Block.Timestamp {
 		*reply = false
 		return
 	}
-	fmt.Println("actually starting part a")
 	slave.Config = config
 	hMessage := slave.MakeHMessage()
 	io.WriteString(slave.Stdin, hMessage)
 	slave.Stdin.Flush()
 	aMessage := slave.MakeAMessage()
-	log.Debug(hMessage)
 	time.Sleep(2000 * time.Millisecond)
 	io.WriteString(slave.Stdin, aMessage)
 	slave.Stdin.Flush()
-	log.Debug(aMessage)
 	// send stuff to the miner
 	return nil
 }
@@ -236,9 +230,7 @@ func (slave *Slave) NewHashChain(start, end, length, timestamp uint64) {
 This is used when we want this slave to transition from
 */
 func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error) {
-	log.Debug("TRYING TO START PART B!")
 	slave.mu.Lock()
-	log.Debug("locked part b")
 	defer slave.mu.Unlock()
 	if config.Block.Timestamp < slave.Config.Block.Timestamp {
 		// we ignore the request because timestamp is too small
@@ -248,19 +240,14 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 	}
 	//empty hashchains, update config and send miner the triples.
 	slave.HashChains = []common.HashChain{}
-	log.Debug("ACTUALLY STARTING PART B!!")
 	slave.Config = config
 	if slave.Config.Block.Timestamp < config.Block.Timestamp {
 		io.WriteString(slave.Stdin, slave.MakeHMessage())
 		slave.Stdin.Flush()
 	} //else it's equal and we don't care.
-	log.Debug("done with checking setting H again")
 	io.WriteString(slave.Stdin, slave.MakeBMessage())
-	log.Debug("wrote string")
 	slave.Stdin.Flush()
-	log.Debug("flushed")
 	*reply = true
-	log.Debug("returning before exiting part b")
 	return nil
 }
 
