@@ -32,24 +32,26 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
   __syncthreads();
   uint64_t thread_id = (blockIdx.x*blockDim.x+threadIdx.x);
   triple working = triples[thread_id];
-  hash_chain chain1 = working.chains[0];
-  hash_chain chain2 = working.chains[1];
-  hash_chain chain3 = working.chains[2];
-  // advancing chains
+  uint64_t chain1 = triples[thread_id].chains[0].start;
+  int32_t chain1_length = triples[thread_id].chains[0].length;
+  uint64_t chain2 = triples[thread_id].chains[0].start;
+  int32_t chain2_length = triples[thread_id].chains[0].length;
+  uint64_t chain3 = triples[thread_id].chains[0].start;
+  int32_t chain3_length = triples[thread_id].chains[0].length;
   while (true) {
-    if (chain1.length > chain2.length) {
-      chain1.start = calculate_sha_b(chain1.start);
-      chain1.length--;
+    if (chain1_length > chain2_length) {
+      chain1 = calculate_sha_b(chain1);
+      chain1_length--;
       continue;
     }
-    if (chain1.start == chain2.start)
+    if (chain1 == chain2)
       return;
     // If it gets here, chain1.length == chain2.length
-    if (chain1.length > chain3.length) {
-      chain1.start = calculate_sha_b(chain1.start);
-      chain1.length--;
-      chain2.start = calculate_sha_b(chain2.start);
-      chain2.length--;
+    if (chain1_length > chain3_length) {
+      chain1 = calculate_sha_b(chain1);
+      chain1_length--;
+      chain2 = calculate_sha_b(chain2);
+      chain2_length--;
       continue;
     }
     break;
@@ -57,13 +59,13 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
   if (chain1.start == chain2.start || chain1.start == chain3.start || chain2.start == chain3.start)
     return;
   // checking for collisions;
-  for (int i = 0; i < chain1.length; i++) {
-    uint64_t t1, t2, t3;
-    t1 = calculate_sha_b(chain1.start);
-    t2 = calculate_sha_b(chain2.start);
-    t3 = calculate_sha_b(chain3.start);
+  uint64_t t1, t2, t3;
+  for (int i = 0; i < chain1_length; i++) {
+    t1 = calculate_sha_b(chain1);
+    t2 = calculate_sha_b(chain2);
+    t3 = calculate_sha_b(chain3);
     if (t1 == t2 && t2 == t3) {
-      printf("B %lu %lu %lu %lu\n", bbase.timestamp, chain1.start, chain2.start, chain3.start);
+      printf("B %lu %lu %lu %lu\n", bbase.timestamp, chain1, chain2, chain3);
       return;
     } else if (t1 == t2) {
       return;
@@ -72,8 +74,8 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
     } else if (t1 == t3) {
       return;
     }
-    chain1.start = t1;
-    chain2.start = t2;
-    chain3.start = t3;
+    chain1 = t1;
+    chain2 = t2;
+    chain3 = t3;
   }
 };
