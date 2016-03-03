@@ -11,6 +11,7 @@ import (
 	"io"
 	"net"
 	"net/rpc"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -19,13 +20,17 @@ import (
 )
 
 const (
-	A       = 1
-	B       = 2
-	address = "172.31.14.55:1337" //"18.187.0.66:1337"
+	A = 1
+	B = 2
+	//"18.187.0.66:1337"
 	//address   = "107.20.178.226:1337" //"18.187.0.66:1337"
-	path      = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
-	maxChains = 2000
+	path           = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
+	defaultAddress = "172.31.14.55"
+	maxChains      = 2000
+	port           = "1337"
 )
+
+var address string
 
 func init() {
 	// Only log the warning severity or above.
@@ -282,7 +287,11 @@ func (slave *Slave) checkAlive() {
 }
 
 func initiateConnection(slave *Slave) {
-	client, err := rpc.Dial("tcp", address)
+	address := defaultAddress
+	if len(os.Args) > 0 {
+		address = os.Args[1]
+	}
+	client, err := rpc.Dial("tcp", address+":"+port)
 	if err != nil {
 		fmt.Println(err)
 		return
