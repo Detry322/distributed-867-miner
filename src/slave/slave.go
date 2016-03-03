@@ -98,10 +98,13 @@ func (slave *Slave) ParseMessage(message string) {
 			slave.mu.Lock()
 			slave.HashChains = append(slave.HashChains, hashchain)
 			if len(slave.HashChains) > maxChains {
-				slave.Master.Call("Master.AddHashChains", slave.HashChains, &reply)
+				hashChains := slave.HashChains
 				slave.HashChains = []common.HashChain{}
+				slave.mu.Unlock()
+				slave.Master.Call("Master.AddHashChains", hashChains, &reply)
+			} else {
+				slave.mu.Unlock()
 			}
-			slave.mu.Unlock()
 		} else if tokens[0] == "B" {
 			collision := common.Collision{
 				Nonce1:    uint64(x),
@@ -142,6 +145,7 @@ func (slave *Slave) MakeAMessage() string {
 func (slave *Slave) MakeBMessage() string {
 	triples := slave.Config.Triples
 	message := "B"
+	log.Debug("about to loop through triples")
 	for _, triple := range triples {
 		message += " "
 		message = common.AddHexDigits(message, triple.Chain1.Start, true)
@@ -156,6 +160,7 @@ func (slave *Slave) MakeBMessage() string {
 		message += " "
 		message = common.AddHexDigits(message, triple.Chain3.Length, false)
 	}
+	log.Debug("made part b message, returning")
 	return message + "\n"
 }
 
@@ -266,10 +271,14 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		//io.WriteString(slave.Stdin, slave.MakeHMessage())
 		//slave.Stdin.Flush()
 	}
+	log.Debug("done with checking setting H again")
 	io.WriteString(slave.Stdin, slave.MakeBMessage())
+	log.Debug("wrote string")
 	slave.Stdin.Flush()
+	log.Debug("flushed")
 	slave.Mode = B
 	*reply = true
+	log.Debug("returning before exiting part b")
 	return nil
 }
 
