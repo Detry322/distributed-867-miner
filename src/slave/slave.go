@@ -35,7 +35,6 @@ func init() {
 type Slave struct {
 	Config       common.HashConfig
 	Id           uint64
-	Mode         uint64
 	mu           sync.Mutex
 	Master       *rpc.Client
 	Cmd          exec.Cmd
@@ -43,7 +42,6 @@ type Slave struct {
 	Stdout       *bufio.Reader
 	MinerStarted bool
 	HashChains   []common.HashChain
-	configChan   chan common.HashConfig
 	messageChan  chan string
 }
 
@@ -58,7 +56,7 @@ func (slave *Slave) ParseMessage(message string) {
 		return
 	} else if string(message[0]) == "=" {
 		// this is a debug message
-		//log.Debug("debug message: " + message)
+		log.Debug("debug message: " + message)
 	} else {
 		// non debug
 		// A timestamp nonce nonce
@@ -106,6 +104,7 @@ func (slave *Slave) ParseMessage(message string) {
 				slave.mu.Unlock()
 			}
 		} else if tokens[0] == "B" {
+			log.Debug("B message: " + message)
 			collision := common.Collision{
 				Nonce1:    uint64(x),
 				Nonce2:    uint64(y),
@@ -171,17 +170,11 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	fmt.Println("tring to start part a")
 	slave.mu.Lock()
 	defer slave.mu.Unlock()
-	if config.Block.Timestamp <= slave.Config.Block.Timestamp {
+	if config.Block.Timestamp < slave.Config.Block.Timestamp {
 		*reply = false
 		return
 	}
-	if slave.Mode == B {
-		// can't change the mode right now.
-		slave.configChan <- config
-		return
-	}
 	fmt.Println("actually starting part a")
-	slave.Mode = A
 	slave.Config = config
 	hMessage := slave.MakeHMessage()
 	io.WriteString(slave.Stdin, hMessage)
@@ -206,7 +199,6 @@ func (slave *Slave) checkProcess() {
 		if len(data) == 0 {
 			continue
 		}
-		fmt.Println(string(data))
 		for _, d := range data {
 			oldData = append(oldData, d)
 		}
@@ -221,7 +213,6 @@ func (slave *Slave) checkProcess() {
 			slave.messageChan <- string(allData)
 			oldData = []byte{}
 			// now send our message
-			fmt.Println(string(allData))
 		}
 	}
 }
@@ -254,29 +245,20 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		*reply = false
 		log.Debug("timestamp too small")
 		return nil
-	} else if slave.Mode == B {
-		log.Debug("already mode B")
-		// send it to the channel.
-		slave.configChan <- config
 	}
 	//empty hashchains, update config and send miner the triples.
 	slave.HashChains = []common.HashChain{}
-	log.Debug("ACTUALY STARTING PART B!!")
+	log.Debug("ACTUALLY STARTING PART B!!")
+	slave.Config = config
 	if slave.Config.Block.Timestamp < config.Block.Timestamp {
-		slave.Config = config
 		io.WriteString(slave.Stdin, slave.MakeHMessage())
 		slave.Stdin.Flush()
-	} else if slave.Config.Block.Timestamp == config.Block.Timestamp {
-		slave.Config = config
-		//io.WriteString(slave.Stdin, slave.MakeHMessage())
-		//slave.Stdin.Flush()
-	}
+	} //else it's equal and we don't care.
 	log.Debug("done with checking setting H again")
 	io.WriteString(slave.Stdin, slave.MakeBMessage())
 	log.Debug("wrote string")
 	slave.Stdin.Flush()
 	log.Debug("flushed")
-	slave.Mode = B
 	*reply = true
 	log.Debug("returning before exiting part b")
 	return nil
@@ -300,21 +282,10 @@ func getIPAddress() (s string, err error) {
 
 func (slave *Slave) listen() {
 	//go slave.checkProcess()
-	reply := false
 	for {
-		select {
-		case config := <-slave.configChan:
-			if len(config.Triples) > 0 {
-				slave.StartStepB(config, &reply)
-			} else {
-				slave.configChan <- config
-			}
-		case message := <-slave.messageChan:
-			// new message to act on.
-			slave.ParseMessage(message)
-		default:
-			<-time.NewTimer(time.Second / 4).C
-		}
+		message := <-slave.messageChan
+		// new message to act on.
+		slave.ParseMessage(message)
 	}
 }
 
@@ -366,7 +337,6 @@ Runs on startup
 */
 func main() {
 	slave := &Slave{
-		configChan:  make(chan common.HashConfig, 100),
 		messageChan: make(chan string, 1000),
 	}
 	rpc.Register(slave)
