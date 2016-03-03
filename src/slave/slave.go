@@ -21,7 +21,8 @@ import (
 const (
 	A         = 1
 	B         = 2
-	address   = "172.31.14.55:1337"                     //"18.187.0.66:1337"
+	//address   = "172.31.14.55:1337"                     //"18.187.0.66:1337"
+	address   = "107.20.178.226:1337" //"18.187.0.66:1337"
 	path      = "/home/ubuntu/euphoric-gpu/miner/miner" // TODO: modify this to right path.
 	maxChains = 1000
 )
