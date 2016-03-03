@@ -222,6 +222,7 @@ int main(int argc, char **argv) {
         cout.flush();
       } else if (state == STATE_WORKING_B) {
         run_step_b(global_base, part_b_triples);
+        cout << "B_FIN" << endl;
         cout.flush();
         state = STATE_WORKING_A;
       }

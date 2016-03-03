@@ -31,7 +31,6 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
   }
   __syncthreads();
   uint64_t thread_id = (blockIdx.x*blockDim.x+threadIdx.x);
-  triple working = triples[thread_id];
   uint64_t chain1 = triples[thread_id].chains[0].start;
   int32_t chain1_length = triples[thread_id].chains[0].length;
   uint64_t chain2 = triples[thread_id].chains[0].start;
