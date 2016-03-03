@@ -228,11 +228,13 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 				fmt.Println("Appended triple " + strconv.Itoa(len(m.HashChainTriples) - int(m.HashChainTriplesIndex)))
 
 				if m.checkPartADone() {
+					fmt.Println("Part a done")
 					args := common.HashConfig{m.LastBlock, m.HashChainTriples[m.HashChainTriplesIndex : m.HashChainTriplesIndex + SEND_THRESHOLD]}
 					reply := false
 					
 					done := false
 					for !done {
+						fmt.Println("Calling part b rpc")
 						e := m.Slaves[m.NextSlave].conn.Call("Slave.StartStepB", args, &reply)
 						
 						if e == nil {
