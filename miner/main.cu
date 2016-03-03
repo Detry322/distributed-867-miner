@@ -216,8 +216,10 @@ int main(int argc, char **argv) {
         this_thread::yield();
       } else if (state == STATE_WORKING_A) {
         run_step_a(global_base);
+        cout.flush();
       } else if (state == STATE_WORKING_B) {
         run_step_b(global_base, part_b_triples);
+        cout.flush();
         state = STATE_WORKING_A;
       }
     }
