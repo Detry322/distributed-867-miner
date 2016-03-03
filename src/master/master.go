@@ -19,7 +19,7 @@ const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const SEND_THRESHOLD = 1024
-const MINE_ON_GENESIS = true
+const MINE_ON_GENESIS = false
 
 func init() {
   // Only log the warning severity or above.
