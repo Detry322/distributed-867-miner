@@ -179,10 +179,12 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	slave.Config = config
 	hMessage := slave.MakeHMessage()
 	io.WriteString(slave.Stdin, hMessage)
+	slave.Stdin.Flush()
 	aMessage := slave.MakeAMessage()
 	log.Debug(hMessage)
 	time.Sleep(2000 * time.Millisecond)
 	io.WriteString(slave.Stdin, aMessage)
+	slave.Stdin.Flush()
 	log.Debug(aMessage)
 	// send stuff to the miner
 	return nil
@@ -252,8 +254,10 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 	if slave.Config.Block.Timestamp < config.Block.Timestamp {
 		slave.Config = config
 		io.WriteString(slave.Stdin, slave.MakeHMessage())
+		slave.Stdin.Flush()
 	}
 	io.WriteString(slave.Stdin, slave.MakeBMessage())
+	slave.Stdin.Flush()
 	slave.Mode = B
 	return nil
 }
