@@ -242,12 +242,15 @@ This is used when we want this slave to transition from
 func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error) {
 	log.Debug("TRYING TO START PART B!")
 	slave.mu.Lock()
+	log.Debug("locked part b")
 	defer slave.mu.Unlock()
 	if config.Block.Timestamp < slave.Config.Block.Timestamp {
 		// we ignore the request because timestamp is too small
 		*reply = false
+		log.Debug("timestamp too small")
 		return nil
 	} else if slave.Mode == B {
+		log.Debug("already mode B")
 		// send it to the channel.
 		slave.configChan <- config
 	}
@@ -258,10 +261,15 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		slave.Config = config
 		io.WriteString(slave.Stdin, slave.MakeHMessage())
 		slave.Stdin.Flush()
+	} else if slave.Config.Block.Timestamp == config.Block.Timestamp {
+		slave.Config = config
+		//io.WriteString(slave.Stdin, slave.MakeHMessage())
+		//slave.Stdin.Flush()
 	}
 	io.WriteString(slave.Stdin, slave.MakeBMessage())
 	slave.Stdin.Flush()
 	slave.Mode = B
+	*reply = true
 	return nil
 }
 
