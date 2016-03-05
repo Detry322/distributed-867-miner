@@ -33,33 +33,22 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
   uint64_t thread_id = (blockIdx.x*blockDim.x+threadIdx.x);
   uint64_t chain1 = triples[thread_id].chains[0].start;
   int32_t chain1_length = triples[thread_id].chains[0].length;
-  uint64_t chain2 = triples[thread_id].chains[0].start;
-  int32_t chain2_length = triples[thread_id].chains[0].length;
-  uint64_t chain3 = triples[thread_id].chains[0].start;
-  int32_t chain3_length = triples[thread_id].chains[0].length;
-  while (true) {
-    if (chain1_length > chain2_length) {
-      chain1 = calculate_sha_b(chain1);
-      chain1_length--;
-      continue;
-    }
-    if (chain1 == chain2)
-      return;
-    // If it gets here, chain1.length == chain2.length
-    if (chain1_length > chain3_length) {
-      chain1 = calculate_sha_b(chain1);
-      chain1_length--;
-      chain2 = calculate_sha_b(chain2);
-      chain2_length--;
-      continue;
-    }
-    break;
-  };
-  if (chain1 == chain2 || chain1 == chain3 || chain2 == chain3)
+  uint64_t chain2 = triples[thread_id].chains[1].start;
+  int32_t chain2_length = triples[thread_id].chains[1].length;
+  uint64_t chain3 = triples[thread_id].chains[2].start;
+  int32_t chain3_length = triples[thread_id].chains[2].length;
+  for (int i = 0; i < chain1_length - chain2_length; i++) {
+    chain1 = calculate_sha_b(chain1);
+  }
+  chain1_length = chain2_length;
+  for (int i = 0; i < chain2_length - chain3_length; i++) {
+    chain1 = calculate_sha_b(chain1);
+    chain2 = calculate_sha_b(chain2);
+  }
+  if (chain1 == chain2)
     return;
-  // checking for collisions;
   uint64_t t1, t2, t3;
-  for (int i = 0; i < chain1_length; i++) {
+  for (int i = 0; i < chain3_length; i++) {
     t1 = calculate_sha_b(chain1);
     t2 = calculate_sha_b(chain2);
     t3 = calculate_sha_b(chain3);
