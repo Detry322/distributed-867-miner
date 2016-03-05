@@ -259,18 +259,20 @@ func sendPartBRequest(m *Master, idx uint64, timestamp uint64) {
 	m.mu.Lock()
 	log.Debug("Acquired lock in sendPartBRequest")
 	if m.LastBlock.Timestamp != timestamp {
+		log.Debug("1")
 		log.Debug("Releasing lock in sendPartBRequest")
 		m.mu.Unlock()
 		return
 	}
 	args := common.HashConfig{m.LastBlock, m.HashChainTriples[idx : idx+SEND_THRESHOLD]}
 	reply := false
-
+	log.Debug("2")
 	done := false
 	for !done {
+		log.Debug("3")
 		fmt.Println("Calling part b rpc")
 		e := m.Slaves[m.NextSlave].conn.Call("Slave.StartStepB", args, &reply)
-
+		log.Debug("4")
 		if e == nil {
 			done = true
 		}
