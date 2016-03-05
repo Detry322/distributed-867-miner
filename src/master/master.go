@@ -25,7 +25,7 @@ const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 9
 const SEND_THRESHOLD = 128
 const MINE_ON_GENESIS = false
-const OVERRIDE_DIFFICULTY = 42
+const OVERRIDE_DIFFICULTY = 32
 
 func init() {
 	// Only log the warning severity or above.
@@ -152,6 +152,15 @@ type BlockRequest struct {
 }
 
 func commitBlock(master *Master, b common.Block, text string) {
+	fmt.Println("parent id", b.ParentId)
+	fmt.Println("root", b.Root)
+	fmt.Println("diff", b.Difficulty)
+	fmt.Println("ts", b.Timestamp)
+	fmt.Println("1", b.Nonces[0])
+	fmt.Println("2", b.Nonces[1])
+	fmt.Println("3", b.Nonces[2])
+	fmt.Println("ver", b.Version)
+	fmt.Println(text)
 	log.Fatal("Attempting to commit block!!!!!!!")
 	br := BlockRequest{b, text}
 	s, e := json.Marshal(br)
@@ -237,6 +246,7 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 
 				m.HashChainTriples = append(m.HashChainTriples, common.HashChainTriple{entry[0], entry[1], entry[2]})
 				if len(m.HashChainTriples)%1000 == 0 {
+					fmt.Println(chain.Length)
 					log.Info("triples", strconv.Itoa(len(m.HashChainTriples)))
 				}
 				if m.checkPartADone() {
