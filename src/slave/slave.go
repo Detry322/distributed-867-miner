@@ -171,10 +171,12 @@ func (slave *Slave) MakeBMessage() string {
 RPC called by master
 */
 func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error) {
+	log.Debug("Starting step a rpc")
 	slave.mu.Lock()
 	defer slave.mu.Unlock()
 	if config.Block.Timestamp < slave.Config.Block.Timestamp {
 		*reply = false
+		log.Debug("Stale start Step A")
 		return
 	}
 	slave.Config = config
@@ -344,7 +346,7 @@ Runs on startup
 func main() {
 	slave := &Slave{
 		messageChan: make(chan string, 2000),
-		toSendChan:  make(chan string, 10),
+		toSendChan:  make(chan string, 100),
 	}
 	rpc.Register(slave)
 	slave.startMiner()
