@@ -48,6 +48,7 @@ type Slave struct {
 	MinerStarted bool
 	HashChains   []common.HashChain
 	messageChan  chan string
+	toSendChan   chan string
 }
 
 /*
@@ -178,12 +179,9 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	}
 	slave.Config = config
 	hMessage := slave.MakeHMessage()
-	io.WriteString(slave.Stdin, hMessage)
-	slave.Stdin.Flush()
+	slave.toSendChan <- hMessage
 	aMessage := slave.MakeAMessage()
-	time.Sleep(2000 * time.Millisecond)
-	io.WriteString(slave.Stdin, aMessage)
-	slave.Stdin.Flush()
+	slave.toSendChan <- aMessage
 	// send stuff to the miner
 	return nil
 }
@@ -247,15 +245,12 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 	if slave.Config.Block.Timestamp < config.Block.Timestamp {
 		slave.Config = config
 		hMessage := slave.MakeHMessage()
-		io.WriteString(slave.Stdin, hMessage)
-		slave.Stdin.Flush()
-		time.Sleep(2000 * time.Millisecond)
+		slave.toSendChan <- hMessage
 		slave.HashChains = []common.HashChain{}
 	} else {
 		slave.Config = config
 	}
-	io.WriteString(slave.Stdin, slave.MakeBMessage())
-	slave.Stdin.Flush()
+	slave.toSendChan <- slave.MakeBMessage()
 	*reply = true
 	return nil
 }
@@ -279,9 +274,15 @@ func getIPAddress() (s string, err error) {
 func (slave *Slave) listen() {
 	//go slave.checkProcess()
 	for {
-		message := <-slave.messageChan
-		// new message to act on.
-		slave.ParseMessage(message)
+		select {
+		case message := <-slave.messageChan:
+			// new message to act on.
+			slave.ParseMessage(message)
+		case message := <-slave.toSendChan:
+			io.WriteString(slave.Stdin, message)
+			slave.Stdin.Flush()
+		}
+
 	}
 }
 
@@ -337,7 +338,8 @@ Runs on startup
 */
 func main() {
 	slave := &Slave{
-		messageChan: make(chan string, 1000),
+		messageChan: make(chan string, 2000),
+		toSendChan:  make(chan string, 10),
 	}
 	rpc.Register(slave)
 	slave.startMiner()
