@@ -347,7 +347,7 @@ Runs on startup
 func main() {
 	slave := &Slave{
 		messageChan: make(chan string, 2000),
-		toSendChan:  make(chan string, 10),
+		toSendChan:  make(chan string, 1000),
 	}
 	rpc.Register(slave)
 	slave.startMiner()
