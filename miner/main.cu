@@ -199,6 +199,8 @@ int main(int argc, char **argv) {
         handle_start_a(cstr);
       } else if (cstr[0] == 'B') {
         handle_start_b(cstr);
+        run_step_b(global_base, part_b_triples);
+        state = STATE_WORKING_A;
       } else if (cstr[0] == 'Q') {
         cout << "=== Exiting..." << endl;
         exit(0);
@@ -214,10 +216,6 @@ int main(int argc, char **argv) {
       } else if (state == STATE_WORKING_A) {
         run_step_a(global_base);
         cout.flush();
-      } else if (state == STATE_WORKING_B) {
-        run_step_b(global_base, part_b_triples);
-        cout.flush();
-        state = STATE_WORKING_A;
       }
     }
   }
