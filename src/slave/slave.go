@@ -291,7 +291,7 @@ func (slave *Slave) sendMessages() {
 		message := <-slave.toSendChan
 		io.WriteString(slave.Stdin, message)
 		slave.Stdin.Flush()
-		time.Sleep(2000 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 	}
 }
 
