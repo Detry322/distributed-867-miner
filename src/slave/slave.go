@@ -181,7 +181,7 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	io.WriteString(slave.Stdin, hMessage)
 	slave.Stdin.Flush()
 	aMessage := slave.MakeAMessage()
-	// time.Sleep(2000 * time.Millisecond)
+	time.Sleep(2000 * time.Millisecond)
 	io.WriteString(slave.Stdin, aMessage)
 	slave.Stdin.Flush()
 	// send stuff to the miner
@@ -249,6 +249,7 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		hMessage := slave.MakeHMessage()
 		io.WriteString(slave.Stdin, hMessage)
 		slave.Stdin.Flush()
+		time.Sleep(2000 * time.Millisecond)
 		slave.HashChains = []common.HashChain{}
 	} else {
 		slave.Config = config
