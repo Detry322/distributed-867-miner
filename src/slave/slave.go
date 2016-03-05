@@ -236,15 +236,16 @@ This is used when we want this slave to transition from
 */
 func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error) {
 	slave.mu.Lock()
+	defer slave.mu.Unlock()
 	if config.Block.Timestamp < slave.Config.Block.Timestamp {
 		// we ignore the request because timestamp is too small
 		*reply = false
 		log.Debug("timestamp too small")
-		slave.mu.Unlock()
 		return nil
 	}
 	//empty hashchains, update config and send miner the triples.
 	if slave.Config.Block.Timestamp < config.Block.Timestamp {
+		log.Debug("new timestamp for config, start step B")
 		slave.Config = config
 		hMessage := slave.MakeHMessage()
 		slave.toSendChan <- hMessage
@@ -253,8 +254,8 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		slave.Config = config
 	}
 	slave.toSendChan <- slave.MakeBMessage()
+	log.Debug("sent B message to miner.")
 	*reply = true
-	slave.mu.Unlock()
 	return nil
 }
 
@@ -348,7 +349,7 @@ Runs on startup
 func main() {
 	slave := &Slave{
 		messageChan: make(chan string, 2000),
-		toSendChan:  make(chan string, 100),
+		toSendChan:  make(chan string, 1000),
 	}
 	rpc.Register(slave)
 	slave.startMiner()
