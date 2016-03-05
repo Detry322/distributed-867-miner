@@ -146,11 +146,11 @@ void handle_update_base(const char* input) {
   cout << "=== Updating base..." << endl;
   cout << "= Parentid: ";
   for (int i = 0; i < 32; i ++) {
-    printf("%hhx", parentid[i]);
+    printf("%02hhx", parentid[i]);
   }
   cout << endl << "= Root: ";
   for (int i = 0; i < 32; i ++) {
-    printf("%hhx", root[i]);
+    printf("%02hhx", root[i]);
   }
   cout << endl;
   cout << "= Difficulty: " << difficulty << " Timestamp: " << timestamp << " Version: " << (uint32_t) version << endl;
