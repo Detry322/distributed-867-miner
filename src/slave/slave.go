@@ -181,7 +181,6 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	hMessage := slave.MakeHMessage()
 	slave.toSendChan <- hMessage
 	aMessage := slave.MakeAMessage()
-	time.Sleep(500 * time.Millisecond)
 	slave.toSendChan <- aMessage
 	// send stuff to the miner
 	return nil
@@ -235,11 +234,11 @@ This is used when we want this slave to transition from
 */
 func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error) {
 	slave.mu.Lock()
-	defer slave.mu.Unlock()
 	if config.Block.Timestamp < slave.Config.Block.Timestamp {
 		// we ignore the request because timestamp is too small
 		*reply = false
 		log.Debug("timestamp too small")
+		slave.mu.Unlock()
 		return nil
 	}
 	//empty hashchains, update config and send miner the triples.
@@ -248,12 +247,12 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		hMessage := slave.MakeHMessage()
 		slave.toSendChan <- hMessage
 		slave.HashChains = []common.HashChain{}
-		time.Sleep(500 * time.Millisecond)
 	} else {
 		slave.Config = config
 	}
 	slave.toSendChan <- slave.MakeBMessage()
 	*reply = true
+	slave.mu.Unlock()
 	return nil
 }
 
@@ -276,15 +275,20 @@ func getIPAddress() (s string, err error) {
 func (slave *Slave) listen() {
 	//go slave.checkProcess()
 	for {
-		select {
-		case message := <-slave.messageChan:
-			// new message to act on.
-			slave.ParseMessage(message)
-		case message := <-slave.toSendChan:
-			io.WriteString(slave.Stdin, message)
-			slave.Stdin.Flush()
-		}
+		message := <-slave.messageChan
+		// new message to act on.
+		slave.ParseMessage(message)
 
+	}
+}
+
+//constantly sends messages.
+func (slave *Slave) sendMessages() {
+	for {
+		message := <-slave.toSendChan
+		io.WriteString(slave.Stdin, message)
+		slave.Stdin.Flush()
+		time.Sleep(2000 * time.Millisecond)
 	}
 }
 
@@ -315,7 +319,8 @@ func initiateConnection(slave *Slave) {
 		fmt.Println(err)
 		return
 	}
-	slave.listen()
+	go slave.listen()
+	slave.sendMessages()
 }
 
 /*
