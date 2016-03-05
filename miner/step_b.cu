@@ -43,8 +43,10 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
       chain1_length--;
       continue;
     }
-    if (chain1 == chain2)
+    if (chain1 == chain2) {
+      printf("= Not found\n");
       return;
+    }
     // If it gets here, chain1.length == chain2.length
     if (chain1_length > chain3_length) {
       chain1 = calculate_sha_b(chain1);
@@ -55,8 +57,13 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
     }
     break;
   };
-  if (chain1 == chain2 || chain1 == chain3 || chain2 == chain3)
+  if (chain1_length != chain2_length || chain2_length != chain3_length) {
+    printf("= PROBLEMMMMM!!!\n");
+  }
+  if (chain1 == chain2 || chain1 == chain3 || chain2 == chain3) {
+    printf("= Not found\n");
     return;
+  }
   // checking for collisions;
   uint64_t t1, t2, t3;
   for (int i = 0; i < chain1_length; i++) {
@@ -67,10 +74,13 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
       printf("B %lu %lu %lu %lu\n", bbase.timestamp, chain1, chain2, chain3);
       return;
     } else if (t1 == t2) {
+      printf("= Not found\n");
       return;
     } else if (t2 == t3) {
+      printf("= Not found\n");
       return;
     } else if (t1 == t3) {
+      printf("= Not found\n");
       return;
     }
     chain1 = t1;
