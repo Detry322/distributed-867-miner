@@ -235,11 +235,11 @@ This is used when we want this slave to transition from
 */
 func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error) {
 	slave.mu.Lock()
-	defer slave.mu.Unlock()
 	if config.Block.Timestamp < slave.Config.Block.Timestamp {
 		// we ignore the request because timestamp is too small
 		*reply = false
 		log.Debug("timestamp too small")
+		slave.mu.Unlock()
 		return nil
 	}
 	//empty hashchains, update config and send miner the triples.
@@ -248,12 +248,15 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		hMessage := slave.MakeHMessage()
 		slave.toSendChan <- hMessage
 		slave.HashChains = []common.HashChain{}
+		slave.mu.Unlock()
 		time.Sleep(500 * time.Millisecond)
+		slave.mu.Lock()
 	} else {
 		slave.Config = config
 	}
 	slave.toSendChan <- slave.MakeBMessage()
 	*reply = true
+	slave.mu.Unlock()
 	return nil
 }
 
