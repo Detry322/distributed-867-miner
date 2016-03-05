@@ -181,7 +181,7 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	io.WriteString(slave.Stdin, hMessage)
 	slave.Stdin.Flush()
 	aMessage := slave.MakeAMessage()
-	time.Sleep(2000 * time.Millisecond)
+	// time.Sleep(2000 * time.Millisecond)
 	io.WriteString(slave.Stdin, aMessage)
 	slave.Stdin.Flush()
 	// send stuff to the miner
@@ -244,12 +244,15 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		return nil
 	}
 	//empty hashchains, update config and send miner the triples.
-	slave.HashChains = []common.HashChain{}
-	slave.Config = config
 	if slave.Config.Block.Timestamp < config.Block.Timestamp {
-		io.WriteString(slave.Stdin, slave.MakeHMessage())
+		slave.Config = config
+		hMessage := slave.MakeHMessage()
+		io.WriteString(slave.Stdin, hMessage)
 		slave.Stdin.Flush()
-	} //else it's equal and we don't care.
+		slave.HashChains = []common.HashChain{}
+	} else {
+		slave.Config = config
+	}
 	io.WriteString(slave.Stdin, slave.MakeBMessage())
 	slave.Stdin.Flush()
 	*reply = true
