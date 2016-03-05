@@ -181,7 +181,6 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	hMessage := slave.MakeHMessage()
 	slave.toSendChan <- hMessage
 	aMessage := slave.MakeAMessage()
-	time.Sleep(2000 * time.Millisecond)
 	slave.toSendChan <- aMessage
 	// send stuff to the miner
 	return nil
@@ -248,9 +247,6 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		hMessage := slave.MakeHMessage()
 		slave.toSendChan <- hMessage
 		slave.HashChains = []common.HashChain{}
-		slave.mu.Unlock()
-		time.Sleep(2000 * time.Millisecond)
-		slave.mu.Lock()
 	} else {
 		slave.Config = config
 	}
@@ -279,15 +275,20 @@ func getIPAddress() (s string, err error) {
 func (slave *Slave) listen() {
 	//go slave.checkProcess()
 	for {
-		select {
-		case message := <-slave.messageChan:
-			// new message to act on.
-			slave.ParseMessage(message)
-		case message := <-slave.toSendChan:
-			io.WriteString(slave.Stdin, message)
-			slave.Stdin.Flush()
-		}
+		message := <-slave.messageChan
+		// new message to act on.
+		slave.ParseMessage(message)
 
+	}
+}
+
+//constantly sends messages.
+func (slave *Slave) sendMessages() {
+	for {
+		message := <-slave.toSendChan
+		io.WriteString(slave.Stdin, message)
+		slave.Stdin.Flush()
+		time.Sleep(2000 * time.Millisecond)
 	}
 }
 
@@ -318,7 +319,8 @@ func initiateConnection(slave *Slave) {
 		fmt.Println(err)
 		return
 	}
-	slave.listen()
+	go slave.listen()
+	slave.sendMessages()
 }
 
 /*
