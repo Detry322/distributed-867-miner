@@ -288,7 +288,7 @@ func (slave *Slave) checkAlive() {
 
 func initiateConnection(slave *Slave) {
 	address := defaultAddress
-	if len(os.Args) > 0 {
+	if len(os.Args) > 1 {
 		address = os.Args[1]
 	}
 	client, err := rpc.Dial("tcp", address+":"+port)

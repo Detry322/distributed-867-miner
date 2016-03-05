@@ -25,6 +25,7 @@ const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 9
 const SEND_THRESHOLD = 128
 const MINE_ON_GENESIS = false
+const OVERRIDE_DIFFICULTY = 42
 
 func init() {
 	// Only log the warning severity or above.
@@ -110,7 +111,9 @@ func getNextBlock() common.Block {
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Decoder failed")
 	}
-
+	if OVERRIDE_DIFFICULTY != 0 {
+		data.Difficulty = OVERRIDE_DIFFICULTY
+	}
 	fmt.Println("getNextBlock returned")
 
 	return data
