@@ -234,13 +234,13 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 				entry := m.HashChainMap[chain.End]
 				delete(m.HashChainMap, chain.End)
 
-				if entry[0].End < entry[1].End {
+				if entry[0].Length < entry[1].Length {
 					entry[0], entry[1] = entry[1], entry[0]
 				}
-				if entry[1].End < entry[2].End {
+				if entry[1].Length < entry[2].Length {
 					entry[1], entry[2] = entry[2], entry[1]
 				}
-				if entry[0].End < entry[1].End {
+				if entry[0].Length < entry[1].Length {
 					entry[0], entry[1] = entry[1], entry[0]
 				}
 
