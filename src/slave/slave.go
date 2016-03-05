@@ -181,7 +181,7 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	hMessage := slave.MakeHMessage()
 	slave.toSendChan <- hMessage
 	aMessage := slave.MakeAMessage()
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(2000 * time.Millisecond)
 	slave.toSendChan <- aMessage
 	// send stuff to the miner
 	return nil
@@ -249,7 +249,7 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		slave.toSendChan <- hMessage
 		slave.HashChains = []common.HashChain{}
 		slave.mu.Unlock()
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(2000 * time.Millisecond)
 		slave.mu.Lock()
 	} else {
 		slave.Config = config
