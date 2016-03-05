@@ -57,11 +57,14 @@ func main() {
 	go listenForSlaves(master)
 
 	for {
+		log.Debug("Started main for loop")
 		b := getNextBlock()
 		if MINE_ON_GENESIS {
 			b = getGenesisBlock()
 		}
+		log.Debug("Waiting for lock in main for loop")
 		master.mu.Lock()
+		log.Debug("Acquired lock in main for loop")
 		if b.ParentId != master.LastBlock.ParentId || (int64(time.Now().UnixNano())-int64(master.LastBlock.Timestamp))/NANOS_PER_MINUTE > TIMESTAMP_WINDOW_IN_MINUTES {
 			fmt.Println("Mining on new block")
 			master.LastBlock = b
@@ -73,7 +76,9 @@ func main() {
 			master.HashChainTriplesIndex = 0
 			go master.solveBlock()
 		}
+		log.Debug("Releasing lock in main for loop")
 		master.mu.Unlock()
+		log.Debug("Sleeping in main for loop")
 		time.Sleep(time.Millisecond * time.Duration(SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS))
 	}
 }
@@ -88,13 +93,16 @@ func listenForSlaves(master *Master) {
 }
 
 func (m *Master) solveBlock() {
+	log.Debug("Entered solveBlock")
+	log.Debug("Waiting for lock in solveBlock")
 	m.mu.Lock()
-	fmt.Println("Starting Part A")
+	log.Debug("Acquired lock in solveBlock")
 	for _, slave := range m.Slaves {
 		args := common.HashConfig{m.LastBlock, make([]common.HashChainTriple, 0)}
 		reply := false
 		slave.conn.Call("Slave.StartStepA", args, &reply)
 	}
+	log.Debug("Releasing lock in solveBlock")
 	m.mu.Unlock()
 }
 
@@ -114,7 +122,7 @@ func getNextBlock() common.Block {
 	if OVERRIDE_DIFFICULTY != 0 {
 		data.Difficulty = OVERRIDE_DIFFICULTY
 	}
-	fmt.Println("getNextBlock returned")
+	log.Debug("Returning in getNextBlock")
 
 	return data
 }
@@ -145,7 +153,6 @@ type BlockRequest struct {
 
 func commitBlock(master *Master, b common.Block, text string) {
 	log.Error("Attempting to commit block!!!!!!!")
-	master.mu.Lock()
 	br := BlockRequest{b, text}
 	s, e := json.Marshal(br)
 	if e != nil {
@@ -159,8 +166,6 @@ func commitBlock(master *Master, b common.Block, text string) {
 		log.WithFields(log.Fields{"error": e}).Error("Marshalling Failed")
 	}
 	resp.Body.Close()
-
-	master.mu.Unlock()
 }
 
 func (m *Master) Connect(ip string, reply *bool) (err error) {
@@ -168,7 +173,9 @@ func (m *Master) Connect(ip string, reply *bool) (err error) {
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Connect error")
 	}
+	log.Debug("Waiting for lock in Connect")
 	m.mu.Lock()
+	log.Debug("Acquired for lock in Connect")
 	fmt.Println("New slave connected")
 	m.Slaves = append(m.Slaves, Slave{conn})
 	args := common.HashConfig{m.LastBlock, make([]common.HashChainTriple, 0)}
@@ -177,6 +184,7 @@ func (m *Master) Connect(ip string, reply *bool) (err error) {
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Part A error")
 	}
+	log.Debug("Releasing lock in Connect")
 	m.mu.Unlock()
 	return nil
 }
@@ -187,7 +195,9 @@ func (m *Master) checkPartADone() bool {
 }
 
 func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err error) {
+	log.Debug("Waiting for lock in AddHashChains")
 	m.mu.Lock()
+	log.Debug("Waiting for lock in AddHashChains")
 	for _, chain := range chains {
 		if chain.Timestamp == m.LastBlock.Timestamp {
 			entry, ok := m.HashChainMap[chain.End]
@@ -227,7 +237,7 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 
 				m.HashChainTriples = append(m.HashChainTriples, common.HashChainTriple{entry[0], entry[1], entry[2]})
 				if len(m.HashChainTriples)%1000 == 0 {
-					log.Debug("triples", strconv.Itoa(len(m.HashChainTriples)))
+					log.Info("triples", strconv.Itoa(len(m.HashChainTriples)))
 				}
 				if m.checkPartADone() {
 
@@ -238,14 +248,19 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 			}
 		}
 	}
+	log.Debug("Releasing lock in AddHashChains")
 	m.mu.Unlock()
 
 	return nil
 }
 
 func sendPartBRequest(m *Master, idx uint64, timestamp uint64) {
+	log.Debug("Waiting for lock in sendPartBRequest")
 	m.mu.Lock()
+	log.Debug("Acquired lock in sendPartBRequest")
 	if m.LastBlock.Timestamp != timestamp {
+		log.Debug("Releasing lock in sendPartBRequest")
+		m.mu.Unlock()
 		return
 	}
 	args := common.HashConfig{m.LastBlock, m.HashChainTriples[idx : idx+SEND_THRESHOLD]}
@@ -265,12 +280,14 @@ func sendPartBRequest(m *Master, idx uint64, timestamp uint64) {
 			m.NextSlave = 0
 		}
 	}
-
+	log.Debug("Releasing lock in sendPartBRequest")
 	m.mu.Unlock()
 }
 
 func (m *Master) SubmitAnswer(triple common.Collision, reply *bool) (err error) {
+	log.Debug("Waiting for lock in SubmitAnswer")
 	m.mu.Lock()
+	log.Debug("Acquired for lock in SubmitAnswer")
 	if triple.Timestamp == m.LastBlock.Timestamp {
 		if triple.Nonce1 != triple.Nonce2 && triple.Nonce2 != triple.Nonce3 && triple.Nonce3 != triple.Nonce1 {
 			fmt.Println("Found collision")
@@ -287,6 +304,7 @@ func (m *Master) SubmitAnswer(triple common.Collision, reply *bool) (err error) 
 			commitBlock(m, b, BLOCK_TEXT)
 		}
 	}
+	log.Debug("Releasing lock in SubmitAnswer")
 	m.mu.Unlock()
 
 	return nil
