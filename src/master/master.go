@@ -152,7 +152,7 @@ type BlockRequest struct {
 }
 
 func commitBlock(master *Master, b common.Block, text string) {
-	log.Error("Attempting to commit block!!!!!!!")
+	log.Fatal("Attempting to commit block!!!!!!!")
 	br := BlockRequest{b, text}
 	s, e := json.Marshal(br)
 	if e != nil {
