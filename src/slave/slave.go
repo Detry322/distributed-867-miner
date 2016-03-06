@@ -183,8 +183,8 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	slave.Config = config
 	hMessage := slave.MakeHMessage()
 	slave.fastSendChan <- hMessage
-	aMessage := slave.MakeAMessage()
-	slave.toSendChan <- aMessage
+	//aMessage := slave.MakeAMessage()
+	//slave.toSendChan <- aMessage
 	// send stuff to the miner
 	return nil
 }
@@ -295,6 +295,11 @@ func (slave *Slave) sendMessages() {
 			for len(slave.toSendChan) > 0 {
 				<-slave.toSendChan
 			}
+			io.WriteString(slave.Stdin, message)
+			slave.Stdin.Flush()
+			time.Sleep(200 * time.Millisecond)
+			io.WriteString(slave.Stdin, "A\n")
+			slave.Stdin.Flush()
 		} else if len(slave.toSendChan) > 0 {
 			message = <-slave.toSendChan
 		} else {
