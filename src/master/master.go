@@ -184,13 +184,23 @@ func commitBlock(master *Master, b common.Block, text string) {
 	fmt.Println("ver", b.Version)
 	fmt.Println(text)
 	log.Error("Attempting to commit block!!!!!!!")
-	header := BlockHeader{b.ParentId, b.Root, b.Difficulty, b.Timestamp, b.Nonces, b.Version}
-	br := BlockRequest{header, text}
-	s, e := json.Marshal(br)
-	if e != nil {
-		log.WithFields(log.Fields{"error": e}).Error("Marshalling Failed")
-	}
-	encoded := string(s)
+	encoded := fmt.Sprintf(`
+{
+  "header": {
+    "parentid": "%s",
+    "root": "%s",
+    "difficulty": %d,
+    "timestamp": %d,
+    "nonces": [
+      %d,
+      %d,
+      %d
+    ],
+    "version": %d
+  },
+  "block": "%s"
+}
+`, b.ParentId, b.Root, b.Difficulty, b.Timestamp, b.Nonces[0], b.Nonces[1], b.Nonces[2], b.Version, text)
 	fmt.Println(encoded)
 
 	resp, e := http.Post(NODE_URL+"/add", "encoding/json", bytes.NewBuffer([]byte(encoded)))
@@ -198,6 +208,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 		log.WithFields(log.Fields{"error": e}).Error("Marshalling Failed")
 	}
 	resp.Body.Close()
+	log.Warn(resp.Status)
 	log.Fatal("Attempted to commit block!!!!!!!")
 }
 
