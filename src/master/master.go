@@ -19,14 +19,14 @@ import "fmt"
 const NANOS_PER_MINUTE = 1000 * 1000 * 1000 * 60
 const NODE_URL = "http://6857coin.csail.mit.edu:8080"
 const GENESIS_HASH = "cd622d4f86b820611dc776fe23cd76a07aad183d1d1b33f504a3940e76da28f3"
-const BLOCK_TEXT = "rparvat,vossm,kjx"
+const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 30000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 8
 const SEND_THRESHOLD = 8192
 const MINE_ON_GENESIS = false
-const MINE_HARDCODED = true
-const OVERRIDE_DIFFICULTY = 50
+const MINE_HARDCODED = false
+const OVERRIDE_DIFFICULTY = 0
 
 func init() {
 	// Only log the warning severity or above.
