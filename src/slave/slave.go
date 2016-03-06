@@ -49,6 +49,7 @@ type Slave struct {
 	HashChains   []common.HashChain
 	messageChan  chan string
 	toSendChan   chan string
+	fastSendChan chan string
 }
 
 /*
@@ -181,7 +182,7 @@ func (slave *Slave) StartStepA(config common.HashConfig, reply *bool) (err error
 	}
 	slave.Config = config
 	hMessage := slave.MakeHMessage()
-	slave.toSendChan <- hMessage
+	slave.fastSendChan <- hMessage
 	aMessage := slave.MakeAMessage()
 	slave.toSendChan <- aMessage
 	// send stuff to the miner
@@ -248,7 +249,7 @@ func (slave *Slave) StartStepB(config common.HashConfig, reply *bool) (err error
 		log.Debug("new timestamp for config, start step B")
 		slave.Config = config
 		hMessage := slave.MakeHMessage()
-		slave.toSendChan <- hMessage
+		slave.fastSendChan <- hMessage
 		slave.HashChains = []common.HashChain{}
 	} else {
 		slave.Config = config
@@ -287,11 +288,21 @@ func (slave *Slave) listen() {
 
 //constantly sends messages.
 func (slave *Slave) sendMessages() {
+	var message string
 	for {
-		message := <-slave.toSendChan
+		if len(slave.fastSendChan) > 0 {
+			message = <-slave.fastSendChan
+			for len(slave.toSendChan) > 0 {
+				<-slave.toSendChan
+			}
+		} else if len(slave.toSendChan) > 0 {
+			message = <-slave.toSendChan
+		} else {
+			time.Sleep(20 * time.Millisecond)
+			continue
+		}
 		io.WriteString(slave.Stdin, message)
 		slave.Stdin.Flush()
-		time.Sleep(20 * time.Millisecond)
 	}
 }
 
@@ -348,8 +359,9 @@ Runs on startup
 */
 func main() {
 	slave := &Slave{
-		messageChan: make(chan string, 2000),
-		toSendChan:  make(chan string, 1000),
+		messageChan:  make(chan string, 2000),
+		toSendChan:   make(chan string, 1000),
+		fastSendChan: make(chan string, 100),
 	}
 	rpc.Register(slave)
 	slave.startMiner()
