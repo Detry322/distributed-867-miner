@@ -164,13 +164,15 @@ void handle_start_a(const char* input) {
   cout << "=== Working A..." << endl;
 };
 
-void handle_start_b(const char* input) {
+void handle_start_b() {
   if (global_base == NULL) {
     cout << "= Error: Starting B but haven't received base. Will prolly segfault" << endl;
   }
-  input += 2;
   part_b_triples = (triple*) malloc(sizeof(triple)*STEP_B_BLOCKS*STEP_B_THREADS);
   for (int i = 0; i < STEP_B_BLOCKS*STEP_B_THREADS; i++) {
+    string s;
+    getline(cin, s);
+    const char* input = s.c_str();
     for (int j = 0; j < 3; j++) {
       part_b_triples[i].chains[j].start = parse_uint64(input);
       input += 17;
@@ -198,7 +200,7 @@ int main(int argc, char **argv) {
       } else if (cstr[0] == 'A') {
         handle_start_a(cstr);
       } else if (cstr[0] == 'B') {
-        handle_start_b(cstr);
+        handle_start_b();
         run_step_b(global_base, part_b_triples);
         state = STATE_WORKING_A;
       } else if (cstr[0] == 'Q') {
