@@ -19,11 +19,11 @@ import "fmt"
 const NANOS_PER_MINUTE = 1000 * 1000 * 1000 * 60
 const NODE_URL = "http://6857coin.csail.mit.edu:8080"
 const GENESIS_HASH = "169740d5c4711f3cbbde6b9bfbbe8b3d236879d849d1c137660fce9e7884cae7"
-const BLOCK_TEXT = "kevintu-rahunt-sidds"
+const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 8
-const SEND_THRESHOLD = 128
+const SEND_THRESHOLD = 1024
 const MINE_ON_GENESIS = false
 const MINE_HARDCODED = false
 const OVERRIDE_DIFFICULTY = 50

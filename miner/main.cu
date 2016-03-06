@@ -70,7 +70,7 @@ void run_step_a(sha_base* host_input) {
 }
 
 
-#define STEP_B_BLOCKS 1
+#define STEP_B_BLOCKS 8
 #define STEP_B_THREADS 128
 #define MEMORY_SIZE (sizeof(triple)*STEP_B_THREADS*STEP_B_BLOCKS)
 
@@ -78,6 +78,7 @@ void run_step_b(sha_base* host_input, triple* host_triples) {
   if (host_input == NULL || host_triples == NULL) {
     cout << "===== Error: Nothing to copy, step B. Will definitely segfault." << endl;
   }
+  cout << "= Running step B..." << endl;
   sha_base* input;
   cudaMalloc(&input, sizeof(sha_base));
   cudaMemcpy(input, host_input, sizeof(sha_base), cudaMemcpyHostToDevice);
@@ -88,6 +89,7 @@ void run_step_b(sha_base* host_input, triple* host_triples) {
 
   step_b_kernel<<<STEP_B_BLOCKS, STEP_B_THREADS>>>(input, triples);
   cudaDeviceSynchronize();
+  cout << "= Step B finished..." << endl;
 
   cudaFree(input);
   cudaFree(triples);
@@ -164,13 +166,15 @@ void handle_start_a(const char* input) {
   cout << "=== Working A..." << endl;
 };
 
-void handle_start_b(const char* input) {
+void handle_start_b() {
   if (global_base == NULL) {
     cout << "= Error: Starting B but haven't received base. Will prolly segfault" << endl;
   }
-  input += 2;
   part_b_triples = (triple*) malloc(sizeof(triple)*STEP_B_BLOCKS*STEP_B_THREADS);
   for (int i = 0; i < STEP_B_BLOCKS*STEP_B_THREADS; i++) {
+    string s;
+    getline(cin, s);
+    const char* input = s.c_str();
     for (int j = 0; j < 3; j++) {
       part_b_triples[i].chains[j].start = parse_uint64(input);
       input += 17;
@@ -198,7 +202,7 @@ int main(int argc, char **argv) {
       } else if (cstr[0] == 'A') {
         handle_start_a(cstr);
       } else if (cstr[0] == 'B') {
-        handle_start_b(cstr);
+        handle_start_b();
         run_step_b(global_base, part_b_triples);
         state = STATE_WORKING_A;
       } else if (cstr[0] == 'Q') {
