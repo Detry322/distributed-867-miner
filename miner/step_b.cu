@@ -37,6 +37,7 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
   int32_t chain2_length = triples[thread_id].chains[1].length;
   uint64_t chain3 = triples[thread_id].chains[2].start;
   int32_t chain3_length = triples[thread_id].chains[2].length;
+  printf("= %d %d %d", chain1_length, chain2_length, chain3_length);
   for (int i = 0; i < chain1_length - chain2_length; i++) {
     chain1 = calculate_sha_b(chain1);
   }
@@ -70,4 +71,5 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
     chain2 = t2;
     chain3 = t3;
   }
+  printf("= What the dicks\n");
 };
