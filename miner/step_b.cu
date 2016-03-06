@@ -37,7 +37,6 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
   int32_t chain2_length = triples[thread_id].chains[1].length;
   uint64_t chain3 = triples[thread_id].chains[2].start;
   int32_t chain3_length = triples[thread_id].chains[2].length;
-  printf("= %d %d %d", chain1_length, chain2_length, chain3_length);
   for (int i = 0; i < chain1_length - chain2_length; i++) {
     chain1 = calculate_sha_b(chain1);
   }
@@ -48,7 +47,6 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
   }
   if (chain1 == chain2)
     return;
-  printf("= made it this far...\n");
   uint64_t t1, t2, t3;
   for (int i = 0; i < chain3_length; i++) {
     t1 = calculate_sha_b(chain1);
@@ -58,18 +56,14 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
       printf("B %lu %lu %lu %lu\n", bbase.timestamp, chain1, chain2, chain3);
       return;
     } else if (t1 == t2) {
-      printf("= exit early...\n");
       return;
     } else if (t2 == t3) {
-      printf("= exit early...\n");
       return;
     } else if (t1 == t3) {
-      printf("= exit early...\n");
       return;
     }
     chain1 = t1;
     chain2 = t2;
     chain3 = t3;
   }
-  printf("= What the dicks\n");
 };

@@ -70,7 +70,7 @@ void run_step_a(sha_base* host_input) {
 }
 
 
-#define STEP_B_BLOCKS 1
+#define STEP_B_BLOCKS 8
 #define STEP_B_THREADS 128
 #define MEMORY_SIZE (sizeof(triple)*STEP_B_THREADS*STEP_B_BLOCKS)
 
