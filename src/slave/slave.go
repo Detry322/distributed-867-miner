@@ -151,7 +151,6 @@ func (slave *Slave) MakeBMessage() string {
 	triples := slave.Config.Triples
 	message := "B\n"
 	for _, triple := range triples {
-		message += " "
 		message = common.AddHexDigits(message, triple.Chain1.Start, true)
 		message += " "
 		message = common.AddHexDigits(message, triple.Chain1.Length, false)
