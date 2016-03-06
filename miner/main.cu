@@ -204,7 +204,6 @@ int main(int argc, char **argv) {
       } else if (cstr[0] == 'B') {
         handle_start_b();
         run_step_b(global_base, part_b_triples);
-        free(part_b_triples);
         state = STATE_WORKING_A;
       } else if (cstr[0] == 'Q') {
         cout << "=== Exiting..." << endl;
