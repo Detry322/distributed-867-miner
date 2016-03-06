@@ -23,7 +23,7 @@ const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 8
-const SEND_THRESHOLD = 1024
+const SEND_THRESHOLD = 8192
 const MINE_ON_GENESIS = false
 const MINE_HARDCODED = false
 const OVERRIDE_DIFFICULTY = 50
@@ -160,8 +160,17 @@ func getHardcodedBlock() common.Block {
 }
 
 type BlockRequest struct {
-	Block common.Block
-	Tag   string
+	header BlockHeader
+	block   string
+}
+
+type BlockHeader struct {
+	parentId string
+	root string
+	difficulty uint64
+	timestamp uint64
+	nonces [3]uint64
+	version byte
 }
 
 func commitBlock(master *Master, b common.Block, text string) {
@@ -175,7 +184,8 @@ func commitBlock(master *Master, b common.Block, text string) {
 	fmt.Println("ver", b.Version)
 	fmt.Println(text)
 	log.Error("Attempting to commit block!!!!!!!")
-	br := BlockRequest{b, text}
+	header := BlockHeader{b.ParentId, b.Root, b.Difficulty, b.Timestamp, b.Nonces, b.Version}
+	br := BlockRequest{header, text}
 	s, e := json.Marshal(br)
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Marshalling Failed")
