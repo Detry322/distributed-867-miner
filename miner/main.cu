@@ -78,6 +78,7 @@ void run_step_b(sha_base* host_input, triple* host_triples) {
   if (host_input == NULL || host_triples == NULL) {
     cout << "===== Error: Nothing to copy, step B. Will definitely segfault." << endl;
   }
+  cout << "= Running step B..." << endl;
   sha_base* input;
   cudaMalloc(&input, sizeof(sha_base));
   cudaMemcpy(input, host_input, sizeof(sha_base), cudaMemcpyHostToDevice);
@@ -88,6 +89,7 @@ void run_step_b(sha_base* host_input, triple* host_triples) {
 
   step_b_kernel<<<STEP_B_BLOCKS, STEP_B_THREADS>>>(input, triples);
   cudaDeviceSynchronize();
+  cout << "= Step B finished..." << endl;
 
   cudaFree(input);
   cudaFree(triples);
@@ -202,6 +204,7 @@ int main(int argc, char **argv) {
       } else if (cstr[0] == 'B') {
         handle_start_b();
         run_step_b(global_base, part_b_triples);
+        free(part_b_triples);
         state = STATE_WORKING_A;
       } else if (cstr[0] == 'Q') {
         cout << "=== Exiting..." << endl;
