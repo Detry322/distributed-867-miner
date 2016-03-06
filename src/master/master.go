@@ -25,12 +25,8 @@ const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 9
 const SEND_THRESHOLD = 128
 const MINE_ON_GENESIS = false
-<<<<<<< HEAD
 const MINE_HARDCODED = true
 const OVERRIDE_DIFFICULTY = 32
-=======
-const OVERRIDE_DIFFICULTY = 50
->>>>>>> 662c600fe19fc916b8e5bc28c1a7215717c988ac
 
 func init() {
 	// Only log the warning severity or above.
