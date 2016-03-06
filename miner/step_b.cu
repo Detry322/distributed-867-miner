@@ -47,6 +47,7 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
   }
   if (chain1 == chain2)
     return;
+  printf("= made it this far...\n");
   uint64_t t1, t2, t3;
   for (int i = 0; i < chain3_length; i++) {
     t1 = calculate_sha_b(chain1);
@@ -56,10 +57,13 @@ __global__ void step_b_kernel(sha_base* input, triple* triples) {
       printf("B %lu %lu %lu %lu\n", bbase.timestamp, chain1, chain2, chain3);
       return;
     } else if (t1 == t2) {
+      printf("= exit early...\n");
       return;
     } else if (t2 == t3) {
+      printf("= exit early...\n");
       return;
     } else if (t1 == t3) {
+      printf("= exit early...\n");
       return;
     }
     chain1 = t1;
