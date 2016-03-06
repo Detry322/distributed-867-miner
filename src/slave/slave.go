@@ -149,7 +149,7 @@ func (slave *Slave) MakeAMessage() string {
 
 func (slave *Slave) MakeBMessage() string {
 	triples := slave.Config.Triples
-	message := "B"
+	message := "B\n"
 	for _, triple := range triples {
 		message += " "
 		message = common.AddHexDigits(message, triple.Chain1.Start, true)
@@ -163,6 +163,7 @@ func (slave *Slave) MakeBMessage() string {
 		message = common.AddHexDigits(message, triple.Chain3.Start, true)
 		message += " "
 		message = common.AddHexDigits(message, triple.Chain3.Length, false)
+		message += "\n"
 	}
 	return message + "\n"
 }
