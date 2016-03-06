@@ -25,6 +25,7 @@ const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 9
 const SEND_THRESHOLD = 128
 const MINE_ON_GENESIS = false
+const MINE_HARDCODED = true
 const OVERRIDE_DIFFICULTY = 32
 
 func init() {
@@ -61,6 +62,9 @@ func main() {
 		b := getNextBlock()
 		if MINE_ON_GENESIS {
 			b = getGenesisBlock()
+		}
+		if MINE_HARDCODED {
+			b = getHardcodedBlock()
 		}
 		log.Debug("Waiting for lock in main for loop")
 		master.mu.Lock()
@@ -146,6 +150,15 @@ func getGenesisBlock() common.Block {
 	return data
 }
 
+func getHardcodedBlock() common.Block {
+	b := common.Block{}
+	b.ParentId = "b8d8abb85732cad966bf0fe5b4d0e551d6917438d8ec251c1c74b49070e9cea8"
+	b.Difficulty = 40
+	b.Version = 0
+
+	return b
+}
+
 type BlockRequest struct {
 	Block common.Block
 	Tag   string
@@ -161,7 +174,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 	fmt.Println("3", b.Nonces[2])
 	fmt.Println("ver", b.Version)
 	fmt.Println(text)
-	log.Fatal("Attempting to commit block!!!!!!!")
+	log.Error("Attempting to commit block!!!!!!!")
 	br := BlockRequest{b, text}
 	s, e := json.Marshal(br)
 	if e != nil {
@@ -175,6 +188,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 		log.WithFields(log.Fields{"error": e}).Error("Marshalling Failed")
 	}
 	resp.Body.Close()
+	log.Fatal("Attempted to commit block!!!!!!!")
 }
 
 func (m *Master) Connect(ip string, reply *bool) (err error) {
