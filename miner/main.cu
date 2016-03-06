@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <thread>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "./structs.h"
 #include "./step_a.h"
@@ -187,7 +188,10 @@ void handle_start_b() {
 };
 
 int main(int argc, char **argv) {
-  srand(time(NULL));
+  struct timeval ts;
+  gettimeofday(&ts, NULL);
+  srand(ts.tv_sec ^ ts.tv_usec);
+  cout << ts.tv_sec + ts.tv_usec << endl;
   initializeCuda();
   struct pollfd stdin_poll = { .fd = STDIN_FILENO, .events = POLLIN | POLLRDBAND | POLLRDNORM | POLLPRI };
   while (true) {
