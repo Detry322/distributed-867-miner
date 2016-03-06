@@ -300,13 +300,8 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 }
 
 func sendPartBRequest(m *Master, idx uint64, timestamp uint64) {
-	log.Debug("Waiting for lock in sendPartBRequest")
-	m.mu.Lock()
-	log.Debug("Acquired lock in sendPartBRequest")
 	if m.LastBlock.Timestamp != timestamp {
 		log.Debug("1")
-		log.Debug("Releasing lock in sendPartBRequest")
-		m.mu.Unlock()
 		return
 	}
 	args := common.HashConfig{m.LastBlock, m.HashChainTriples[idx : idx+SEND_THRESHOLD]}
@@ -322,13 +317,16 @@ func sendPartBRequest(m *Master, idx uint64, timestamp uint64) {
 			done = true
 		}
 
+		log.Debug("Waiting for lock in sendPartBRequest")
+		m.mu.Lock()
+		log.Debug("Acquired lock in sendPartBRequest")
 		m.NextSlave++
 		if m.NextSlave >= uint64(len(m.Slaves)) {
 			m.NextSlave = 0
 		}
+		m.mu.Unlock()
+		log.Debug("Releasing lock in sendPartBRequest")
 	}
-	log.Debug("Releasing lock in sendPartBRequest")
-	m.mu.Unlock()
 }
 
 func (m *Master) SubmitAnswer(triple common.Collision, reply *bool) (err error) {
