@@ -25,11 +25,11 @@ const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 9
 const SEND_THRESHOLD = 128
 const MINE_ON_GENESIS = false
-const OVERRIDE_DIFFICULTY = 32
+const OVERRIDE_DIFFICULTY = 50
 
 func init() {
 	// Only log the warning severity or above.
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 }
 
 type Master struct {
@@ -280,7 +280,7 @@ func sendPartBRequest(m *Master, idx uint64, timestamp uint64) {
 	done := false
 	for !done {
 		log.Debug("3")
-		fmt.Println("Calling part b rpc")
+		//fmt.Println("Calling part b rpc")
 		e := m.Slaves[m.NextSlave].conn.Call("Slave.StartStepB", args, &reply)
 		log.Debug("4")
 		if e == nil {
