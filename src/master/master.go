@@ -18,9 +18,9 @@ import "fmt"
 
 const NANOS_PER_MINUTE = 1000 * 1000 * 1000 * 60
 const NODE_URL = "http://6857coin.csail.mit.edu:8080"
-const GENESIS_HASH = "169740d5c4711f3cbbde6b9bfbbe8b3d236879d849d1c137660fce9e7884cae7"
-const BLOCK_TEXT = "kevintu-rahunt-sidds"
-const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 15000
+const GENESIS_HASH = "cd622d4f86b820611dc776fe23cd76a07aad183d1d1b33f504a3940e76da28f3"
+const BLOCK_TEXT = "rparvat,vossm,kjx"
+const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 30000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 8
 const SEND_THRESHOLD = 8192
@@ -183,7 +183,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 	fmt.Println("3", b.Nonces[2])
 	fmt.Println("ver", b.Version)
 	fmt.Println(text)
-	log.Fatal("Attempting to commit block!!!!!!!")
+	log.Info("Attempting to commit block!!!!!!!")
 	encoded := fmt.Sprintf(`
 {
   "header": {
