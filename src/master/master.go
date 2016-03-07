@@ -19,7 +19,7 @@ import "fmt"
 const NANOS_PER_MINUTE = 1000 * 1000 * 1000 * 60
 const NODE_URL = "http://6857coin.csail.mit.edu:8080"
 const GENESIS_HASH = "cd622d4f86b820611dc776fe23cd76a07aad183d1d1b33f504a3940e76da28f3"
-const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
+var BLOCK_TEXTS = [...]string{"00001                   Presented by Rolled my own crypto!!!1!!one!!", "00002", "00003                                     _______", "00004                              _,,ad8888888888bba,_", "00005                           ,ad88888I888888888888888ba,", "00006                         ,88888888I88888888888888888888a,", "00007                       ,d888888888I8888888888888888888888b,", "00008                      d88888PP```` ``YY88888888888888888888b,", "00009                    ,d88``__,,--------,,,,.;ZZZY8888888888888,", "00010                   ,8IIl``                ;;l`ZZZIII8888888888,", "00011                  ,I88l;`                  ;lZZZZZ888III8888888,", "00012                ,II88Zl;.                  ;llZZZZZ888888I888888,", "00013               ,II888Zl;.                .;;;;;lllZZZ888888I8888b", "00014              ,II8888Z;;                 `;;;;;`llZZ8888888I8888,", "00015              II88888Z;`                        .;lZZZ8888888I888b", "00016              II88888Z; _,aaa,      .,aaaaa,__.l;llZZZ88888888I888", "00017              II88888IZZZZZZZZZ,  .ZZZZZZZZZZZZZZ;llZZ88888888I888,", "00018              II88888IZZ<`(@@>Z|  |ZZZ<`(@@>ZZZZ;;llZZ888888888I88I", "00019             ,II88888;   ```` ;|  |ZZ; ````     ;;llZ8888888888I888", "00020             II888888l            `;;          .;llZZ8888888888I888,", "00021            ,II888888Z;           ;;;        .;;llZZZ8888888888I888I", "00022            III888888Zl;    ..,   `;;       ,;;lllZZZ88888888888I888", "00023            II88888888Z;;...;(_    _)      ,;;;llZZZZ88888888888I888,", "00024            II88888888Zl;;;;;` `--`Z;.   .,;;;;llZZZZ88888888888I888b", "00025            ]I888888888Z;;;;`   `;llllll;..;;;lllZZZZ88888888888I8888,", "00026            II888888888Zl.;;`Y88bd888P`;;,..;lllZZZZZ88888888888I8888I", "00027            II8888888888Zl;.; ``PPP`;;;,..;lllZZZZZZZ88888888888I88888", "00028            II888888888888Zl;;. `;;;l;;;;lllZZZZZZZZW88888888888I88888", "00029            `II8888888888888Zl;.    ,;;lllZZZZZZZZWMZ88888888888I88888", "00030             II8888888888888888ZbaalllZZZZZZZZZWWMZZZ8888888888I888888,", "00031             `II88888888888888888b`WWZZZZZWWWMMZZZZZZI888888888I888888b", "00032              `II88888888888888888;ZZMMMMMMZZZZZZZZllI888888888I8888888", "00033               `II8888888888888888 `;lZZZZZZZZZZZlllll888888888I8888888,", "00034                II8888888888888888, `;lllZZZZllllll;;.Y88888888I8888888b,", "00035               ,II8888888888888888b   .;;lllllll;;;.;..88888888I88888888b,", "00036               II888888888888888PZI;.  .`;;;.;;;..; ...88888888I8888888888,", "00037               II888888888888PZ;;`;;.   ;. .;.  .;. .. Y8888888I88888888888b,", "00038              ,II888888888PZ;;`                        `8888888I8888888888888b,", "00039              II888888888`                              888888I8888888888888888b", "00040             ,II888888888                              ,888888I88888888888888888", "00041            ,d88888888888                              d888888I8888888888ZZZZZZZ", "00042         ,ad888888888888I                              8888888I8888ZZZZZZZZZZZZZ", "00043       ,d888888888888888`                              888888IZZZZZZZZZZZZZZZZZZ", "00044     ,d888888888888P`8P`                               Y888ZZZZZZZZZZZZZZZZZZZZZ", "00045    ,8888888888888,  `                                 ,ZZZZZZZZZZZZZZZZZZZZZZZZ", "00046   d888888888888888,                                ,ZZZZZZZZZZZZZZZZZZZZZZZZZZZ", "00047   888888888888888888a,      _                    ,ZZZZZZZZZZZZZZZZZZZZ888888888", "00048   888888888888888888888ba,_d`                  ,ZZZZZZZZZZZZZZZZZ88888888888888", "00049   8888888888888888888888888888bbbaaa,,,______,ZZZZZZZZZZZZZZZ888888888888888888", "00050   88888888888888888888888888888888888888888ZZZZZZZZZZZZZZZ888888888888888888888", "00051   8888888888888888888888888888888888888888ZZZZZZZZZZZZZZ88888888888888888888888", "00052   888888888888888888888888888888888888888ZZZZZZZZZZZZZZ888888888888888888888888", "00053   8888888888888888888888888888888888888ZZZZZZZZZZZZZZ88888888888888888888888888", "00054   88888888888888888888888888888888888ZZZZZZZZZZZZZZ8888888888888888888888888888", "00055   8888888888888888888888888888888888ZZZZZZZZZZZZZZ88888888888888888 Normand  88", "00056   88888888888888888888888888888888ZZZZZZZZZZZZZZ8888888888888888888 Veilleux 88", "00057   8888888888888888888888888888888ZZZZZZZZZZZZZZ88888888888888888888888888888888", "00058   taken from: http://tinyurl.com/z2w9gu2"}
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 5000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 8
@@ -40,6 +40,7 @@ type Master struct {
 	HashChainTriples      []common.HashChainTriple
 	HashChainTriplesIndex uint64
 	NextSlave             uint64
+	LisaIndex             int64
 	mu                    sync.Mutex
 }
 
@@ -50,6 +51,7 @@ type Slave struct {
 func main() {
 	log.Debug("Entered main")
 	master := &Master{}
+	master.LisaIndex = -1
 	master.Slaves = make([]Slave, 0)
 	master.LastBlock = common.Block{}
 	master.LastBlock.ParentId = ""
@@ -70,10 +72,12 @@ func main() {
 		master.mu.Lock()
 		log.Debug("Acquired lock in main for loop")
 		if b.ParentId != master.LastBlock.ParentId || (int64(time.Now().UnixNano())-int64(master.LastBlock.Timestamp))/NANOS_PER_MINUTE > TIMESTAMP_WINDOW_IN_MINUTES {
+			master.LisaIndex += 1
 			fmt.Println("Mining on new block")
 			master.LastBlock = b
 			master.LastBlock.Timestamp = uint64(time.Now().Add(time.Minute * time.Duration(TIMESTAMP_WINDOW_IN_MINUTES)).UnixNano())
-			shaHash := sha256.Sum256([]byte(BLOCK_TEXT))
+			shaHash := sha256.Sum256([]byte(BLOCK_TEXTS[master.LisaIndex]))
+			fmt.Println("New word: ", BLOCK_TEXTS[master.LisaIndex])
 			master.LastBlock.Root = hex.EncodeToString(shaHash[:])
 			master.HashChainMap = make(map[uint64][]common.HashChain)
 			master.HashChainTriples = make([]common.HashChainTriple, 0)
@@ -335,7 +339,7 @@ func (m *Master) SubmitAnswer(triple common.Collision, reply *bool) (err error) 
 			fmt.Println("Found collision")
 			b := common.Block{}
 			b.ParentId = m.LastBlock.ParentId
-			shaHash := sha256.Sum256([]byte(BLOCK_TEXT))
+			shaHash := sha256.Sum256([]byte(BLOCK_TEXTS[m.LisaIndex]))
 			b.Root = hex.EncodeToString(shaHash[:])
 			b.Difficulty = m.LastBlock.Difficulty
 			b.Timestamp = m.LastBlock.Timestamp
@@ -343,7 +347,7 @@ func (m *Master) SubmitAnswer(triple common.Collision, reply *bool) (err error) 
 			b.Nonces[1] = triple.Nonce2
 			b.Nonces[2] = triple.Nonce3
 			b.Version = m.LastBlock.Version
-			commitBlock(m, b, BLOCK_TEXT)
+			commitBlock(m, b, BLOCK_TEXTS[m.LisaIndex])
 		}
 	}
 	log.Debug("Releasing lock in SubmitAnswer")
