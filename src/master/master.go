@@ -18,15 +18,11 @@ import "fmt"
 
 const NANOS_PER_MINUTE = 1000 * 1000 * 1000 * 60
 const NODE_URL = "http://6857coin.csail.mit.edu:8080"
-const GENESIS_HASH = "cd622d4f86b820611dc776fe23cd76a07aad183d1d1b33f504a3940e76da28f3"
-const BLOCK_TEXT = "Rolled my own crypto!!!1!!one!!"
+const BLOCK_TEXT = "e4a18a0032ca05abe9c6e2d69ab7cea013da79101fbf942707ae2778ed770199"
 const SLEEP_TIME_BETWEEN_SERVER_CALLS_IN_MILLIS = 5000
 const SLEEP_TIME_SHORT_IN_MILLIS = 100
 const TIMESTAMP_WINDOW_IN_MINUTES = 8
 const SEND_THRESHOLD = 2048
-const MINE_ON_GENESIS = false
-const MINE_HARDCODED = false
-const OVERRIDE_DIFFICULTY = 0
 
 func init() {
 	// Only log the warning severity or above.
@@ -48,6 +44,7 @@ type Slave struct {
 }
 
 func main() {
+	fmt.Println("Started")
 	log.Debug("Entered main")
 	master := &Master{}
 	master.Slaves = make([]Slave, 0)
@@ -60,12 +57,6 @@ func main() {
 	for {
 		log.Debug("Started main for loop")
 		b := getNextBlock()
-		if MINE_ON_GENESIS {
-			b = getGenesisBlock()
-		}
-		if MINE_HARDCODED {
-			b = getHardcodedBlock()
-		}
 		log.Debug("Waiting for lock in main for loop")
 		master.mu.Lock()
 		log.Debug("Acquired lock in main for loop")
@@ -123,40 +114,9 @@ func getNextBlock() common.Block {
 	if e != nil {
 		log.WithFields(log.Fields{"error": e}).Error("Decoder failed")
 	}
-	if OVERRIDE_DIFFICULTY != 0 {
-		data.Difficulty = OVERRIDE_DIFFICULTY
-	}
 	log.Debug("Returning in getNextBlock")
 
 	return data
-}
-
-func getGenesisBlock() common.Block {
-	res, e := http.Get(NODE_URL + "/block/" + GENESIS_HASH)
-	if e != nil {
-		log.WithFields(log.Fields{"error": e}).Error("Genesis block failed")
-	}
-	defer res.Body.Close()
-
-	decoder := json.NewDecoder(res.Body)
-	var data common.Block
-	e = decoder.Decode(&data)
-	if e != nil {
-		log.WithFields(log.Fields{"error": e}).Error("Decoder failed")
-	}
-
-	fmt.Println("getGenesisBlock returned")
-
-	return data
-}
-
-func getHardcodedBlock() common.Block {
-	b := common.Block{}
-	b.ParentId = "b8d8abb85732cad966bf0fe5b4d0e551d6917438d8ec251c1c74b49070e9cea8"
-	b.Difficulty = 40
-	b.Version = 0
-
-	return b
 }
 
 type BlockRequest struct {
@@ -210,6 +170,7 @@ func commitBlock(master *Master, b common.Block, text string) {
 	resp.Body.Close()
 	log.Warn(resp.Status)
 	log.Error("Attempted to commit block!!!!!!!")
+	getNextBlock()
 }
 
 func (m *Master) Connect(ip string, reply *bool) (err error) {
