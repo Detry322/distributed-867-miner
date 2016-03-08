@@ -227,29 +227,36 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 			}
 
 			if lengthEndpoint >= 3 {
-				entry := m.HashChainMap[chain.End]
-				delete(m.HashChainMap, chain.End)
+				en := m.HashChainMap[chain.End]
+				
+				for i := 0; i < lengthEndpoint - 2; i++ {
+					for j := i + 1; j < lengthEndpoint - 1; j++ {
+						if j != 1 {
+							fmt.Println("Generated extra triple")
+						}
 
-				if entry[0].Length < entry[1].Length {
-					entry[0], entry[1] = entry[1], entry[0]
-				}
-				if entry[1].Length < entry[2].Length {
-					entry[1], entry[2] = entry[2], entry[1]
-				}
-				if entry[0].Length < entry[1].Length {
-					entry[0], entry[1] = entry[1], entry[0]
-				}
+						entry := [3]common.HashChain{en[i], en[j], en[lengthEndpoint - 1]}
 
-				m.HashChainTriples = append(m.HashChainTriples, common.HashChainTriple{entry[0], entry[1], entry[2]})
-				if len(m.HashChainTriples)%1000 == 0 {
-					fmt.Println(chain.Length)
-					log.Info("triples", strconv.Itoa(len(m.HashChainTriples)))
-				}
-				if m.checkPartADone() {
+						if entry[0].Length < entry[1].Length {
+							entry[0], entry[1] = entry[1], entry[0]
+						}
+						if entry[1].Length < entry[2].Length {
+							entry[1], entry[2] = entry[2], entry[1]
+						}
+						if entry[0].Length < entry[1].Length {
+							entry[0], entry[1] = entry[1], entry[0]
+						}
 
-					go sendPartBRequest(m, m.HashChainTriplesIndex, m.LastBlock.Timestamp)
-
-					m.HashChainTriplesIndex += SEND_THRESHOLD
+						m.HashChainTriples = append(m.HashChainTriples, common.HashChainTriple{entry[0], entry[1], entry[2]})
+						if len(m.HashChainTriples)%1000 == 0 {
+							fmt.Println(chain.Length)
+							log.Info("triples", strconv.Itoa(len(m.HashChainTriples)))
+						}
+						if m.checkPartADone() {
+								go sendPartBRequest(m, m.HashChainTriplesIndex, m.LastBlock.Timestamp)
+								m.HashChainTriplesIndex += SEND_THRESHOLD
+						}
+					}
 				}
 			}
 		}
