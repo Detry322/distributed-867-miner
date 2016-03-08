@@ -183,6 +183,7 @@ func (m *Master) Connect(ip string, reply *bool) (err error) {
 	log.Debug("Acquired for lock in Connect")
 	fmt.Println("New slave connected")
 	m.Slaves = append(m.Slaves, Slave{conn})
+	fmt.Println(len(m.Slaves))
 	args := common.HashConfig{m.LastBlock, make([]common.HashChainTriple, 0)}
 	bubuj := false
 	e = conn.Call("Slave.StartStepA", args, &bubuj)
@@ -218,9 +219,8 @@ func (m *Master) AddHashChains(chains []common.HashChain, reply *bool) (err erro
 
 				if !duplicate {
 					m.HashChainMap[chain.End] = append(entry, chain)
+					lengthEndpoint = len(m.HashChainMap[chain.End])
 				}
-
-				lengthEndpoint = len(m.HashChainMap[chain.End])
 			} else {
 				list := make([]common.HashChain, 0)
 				m.HashChainMap[chain.End] = append(list, chain)
